@@ -43,13 +43,6 @@ class TemplateContext:
         """Ask the user for feature options interactively"""
         console.print("\n[bold blue]Project Configuration[/bold blue]\n")
 
-    def _update_database(self, db_type: str) -> None:
-        if db_type == "postgres":
-            self.context["database_url"] = "postgresql+asyncpg://user:password@localhost:5432/dbname"
-
-        else:
-            self.context["database_url"] = ""
-
         # Basic metadata
         self.context["author"] = Prompt.ask("Author name", default=self.context["author"])
         self.context["email"] = Prompt.ask("Author email", default=self.context["email"])
@@ -79,6 +72,13 @@ class TemplateContext:
                 self.context[key] = answer.lower() in ["y", "yes"]
 
         console.print("\n[green]✅ Configuration completed![/green]\n")
+
+    def _update_database(self, db_type: str) -> None:
+        """Update database-specific configuration"""
+        if db_type == "postgresql":
+            self.context["database_url"] = "postgresql+asyncpg://user:password@localhost:5432/dbname"
+        else:
+            self.context["database_url"] = ""
 
 class TemplateRenderer:
     """Render Jinja2 template based on the user provided features."""

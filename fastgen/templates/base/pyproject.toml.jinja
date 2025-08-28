@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "{{ project_slug }}"
+version = "{{ version }}"
+description = "{{ description }}"
+authors = [
+  { name="{{ author }}", email="{{ email }}" }
+]
+requires-python = ">=3.9"
+
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+  "pydantic",
+  {% if include_database %}
+  "sqlalchemy",
+  "alembic",
+  {% if database_type == "postgresql" %}
+  "asyncpg",
+  {% elif database_type == "mysql" %}
+  "aiomysql",
+  {% elif database_type == "sqlite" %}
+  "aiosqlite",
+  {% endif %}
+  {% endif %}
+  {% if include_auth %}
+  "passlib[bcrypt]",
+  "python-jose[cryptography]",
+  "email-validator",
+  {% endif %}
+  {% if include_celery %}
+  "celery",
+  "redis",
+  {% endif %}
+  {% if include_loguru %}
+  "loguru",
+  {% endif %}
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "httpx",
+  "black",
+  "isort",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests*"]
+
+[project.scripts]
+{{ project_slug }} = "app.main:app"
