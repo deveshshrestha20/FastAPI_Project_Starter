@@ -1,0 +1,45 @@
+# templates/base/main.py.j2
+from fastapi import FastAPI
+{% if include_database %}
+from app.db.database import engine
+from app.models import Base
+{% endif %}
+{% if include_auth %}
+from app.auth import auth_router
+{% endif %}
+from app.api.v1 import api_router
+from app.core.config import settings
+
+app = FastAPI(
+    title="{{project_name}}",
+    description="{{description}}",
+    version="{{version}}",
+    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+)
+
+{% if include_database %}
+@app.on_event("startup")
+async def startup_event():
+    """Create database tables on startup"""
+    Base.metadata.create_all(bind=engine)
+{% endif %}
+
+# Include API router
+app.include_router(api_router, prefix=settings.API_V1_STR)
+
+{% if include_auth %}
+# Include auth router
+app.include_router(auth_router, prefix="/auth", tags=["authentication"])
+{% endif %}
+
+@app.get("/")
+async def root():
+    return {
+        "message": "Welcome to {{project_name}}!",
+        "version": "{{version}}",
+        "docs_url": "/docs"
+    }
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "service": "{{project_slug}}"}
