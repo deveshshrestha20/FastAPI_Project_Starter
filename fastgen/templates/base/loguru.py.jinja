@@ -5,16 +5,14 @@ Using loguru for structured logging
 
 import os
 from app.core.config import settings
+from pathlib import Path
 from loguru import logger
 
 # Remove default handler
 logger.remove()
 
-# Create logs directory path
-LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
-
-# Ensure logs directory exists
-os.makedirs(LOG_DIR, exist_ok=True)
+LOG_DIR = Path(__file__).resolve().parents[2] / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 # Log format
 LOG_FORMAT = (
@@ -47,35 +45,6 @@ logger.add(
     diagnose=True
 )
 
-{% if include_database %}
-# Database operations log
-logger.add(
-    sink=os.path.join(LOG_DIR, "database.log"),
-    format=LOG_FORMAT,
-    level="INFO",
-    filter=lambda record: "database" in record["extra"],
-    rotation="10 MB",
-    retention="14 days",
-    compression="zip",
-    backtrace=True,
-    diagnose=True
-)
-{% endif %}
-
-{% if include_auth %}
-# Authentication/Security log
-logger.add(
-    sink=os.path.join(LOG_DIR, "auth.log"),
-    format=LOG_FORMAT,
-    level="INFO",
-    filter=lambda record: "auth" in record["extra"],
-    rotation="5 MB",
-    retention="90 days",  # Keep auth logs longer for security
-    compression="zip",
-    backtrace=True,
-    diagnose=True
-)
-{% endif %}
 
 def get_logger():
     """Get the configured logger instance"""

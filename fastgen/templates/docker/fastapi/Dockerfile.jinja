@@ -1,0 +1,59 @@
+ARG PYTHON_VERSION=3.13.1
+
+FROM python:${PYTHON_VERSION}-slim-bookworm AS python
+
+# Stage 1: build dependencies
+FROM python AS builder
+
+RUN apt-get update && apt-get install \
+    --no-install-recommends -y \
+    build-essential \
+    libpq-dev
+
+COPY ./backend/requirements.txt .
+
+RUN pip wheel --wheel-dir /usr/src/app/wheels \
+    -r requirements.txt \
+    --no-cache-dir
+
+# Stage 2: Runtime stage
+FROM python AS runtime
+
+ARG APP_HOME=/app
+ARG APP_USER=fastapi
+ARG APP_GROUP=fastapi
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="${APP_HOME}/.local/bin:${PATH}"
+
+WORKDIR ${APP_HOME}
+
+RUN apt-get update && apt-get install --no-install-recommends -y \
+    libpq-dev \
+    gettext \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd -r ${APP_GROUP} && \
+    useradd -r -g ${APP_GROUP} -d ${APP_HOME} -m ${APP_USER}
+
+RUN mkdir -p ${APP_HOME}/logs && \
+    chown -R ${APP_USER}:${APP_GROUP} ${APP_HOME}/logs && \
+    chmod 775 ${APP_HOME}/logs
+
+COPY --from=builder /usr/src/app/wheels /wheels/
+RUN pip install --no-cache-dir --no-index --find-links=/wheels/ /wheels/* \
+    && rm -rf /wheels/
+
+COPY --chown=${APP_USER}:${APP_GROUP} ./backend/entrypoint.sh /entrypoint.sh
+COPY --chown=${APP_USER}:${APP_GROUP} ./backend/start.sh /start.sh
+
+RUN sed -i 's/\r$//g' /entrypoint.sh /start.sh && \
+    chmod +x /entrypoint.sh /start.sh
+
+COPY --chown=${APP_USER}:${APP_GROUP} ./backend ${APP_HOME}
+
+USER ${APP_USER}
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["/start.sh"]
