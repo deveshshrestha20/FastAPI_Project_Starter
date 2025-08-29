@@ -1,0 +1,41 @@
+from typing import Generator
+from app.db.session import engine, SessionLocal
+from app.db.base import Base
+from app.core.logging import get_logger
+
+logger = get_logger()
+
+def load_models():
+    """Import all models so they are registered with Base.metadata"""
+    try:
+        from app.models.user import User  # example
+        logger.info("Models imported successfully")
+    except Exception as e:
+        logger.error(f"Error importing models: {e}")
+        raise
+
+def init_db() -> None:
+    """Initialize DB and check connection"""
+    load_models()
+    try:
+        Base.metadata.create_all(bind=engine)  # Create tables
+        logger.info("Database tables created successfully")
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+        raise
+
+def close_db() -> None:
+    """Dispose engine"""
+    try:
+        engine.dispose()
+        logger.info("Database connections closed")
+    except Exception as e:
+        logger.error(f"Error closing database connections: {e}")
+
+def get_db() -> Generator:
+    """Session generator for FastAPI"""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
