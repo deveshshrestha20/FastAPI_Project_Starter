@@ -1,0 +1,66 @@
+"""
+Configuration settings for {{ project_name }}
+"""
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
+
+
+class Settings(BaseSettings):
+    """Application settings"""
+
+    # App settings
+    APP_NAME: str = "{{ project_name }}"
+    APP_VERSION: str = "{{ version }}"
+    DEBUG: bool = Field(default=False, description="Debug mode")
+
+    # Server settings
+    HOST: str = Field(default="0.0.0.0", description="Host to bind to")
+    PORT: int = Field(default=8000, description="Port to bind to")
+
+    {% if include_database %}
+    # Database settings
+    DATABASE_URL: str = Field(
+        default="{{ database_url }}",
+        description="Database connection URL"
+    )
+    {% endif %}
+
+    {% if include_auth %}
+    # Authentication settings
+    SECRET_KEY: str = Field(
+        default="SECRET-KEY-CHANGE-IN-PROD",
+        description="Secret key for JWT tokens"
+    )
+    ALGORITHM: str = Field(default="HS256", description="JWT algorithm")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
+        default=30,
+        description="Access token expiry time in minutes"
+    )
+    {% endif %}
+
+    {% if include_celery %}
+    # Celery settings
+    CELERY_BROKER_URL: str = Field(
+        default="redis://localhost:6379/0",
+        description="Celery broker URL"
+    )
+    CELERY_RESULT_BACKEND: str = Field(
+        default="redis://localhost:6379/0",
+        description="Celery result backend URL"
+    )
+    {% endif %}
+
+    # Environment
+    ENVIRONMENT: str = Field(default="development", description="Environment")
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_ignore_empty=True,
+        extra="ignore",  # Ignore unknown env vars
+    )
+
+
+# Global settings instance
+settings = Settings()

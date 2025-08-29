@@ -1,4 +1,3 @@
-# fastgen/core/utils.py
 import os
 import shutil
 from pathlib import Path
@@ -25,7 +24,7 @@ def create_directory_structure(project_path: Path, context: Dict[str, Any]) -> L
         "docs",
     ]
 
-    # Add conditional folders based on context
+    # Add conditional folders
     conditional_folders = []
 
     if context.get("include_database"):
@@ -62,8 +61,30 @@ def create_directory_structure(project_path: Path, context: Dict[str, Any]) -> L
         folder_path = project_path / folder
         folder_path.mkdir(parents=True, exist_ok=True)
 
+        # Create default env files inside envs folder
+    create_env_files(project_path / "envs")
+
     return all_folders
 
+def create_env_files(env_folder: Path) -> None:
+    """
+    Create the default environment files inside the envs folder:
+    - .env.local
+    - .env.example
+    - .env.production
+    """
+    env_folder.mkdir(parents=True, exist_ok=True)
+
+    env_files = {
+        ".env.local": "# Local environment variables\n",
+        ".env.example": "# Example environment variables\n",
+        ".env.production": "# Production environment variables\n"
+    }
+
+    for file_name, content in env_files.items():
+        file_path = env_folder / file_name
+        if not file_path.exists():  # avoid overwriting existing files
+            file_path.write_text(content, encoding="utf-8")
 
 def write_file(file_path: Path, content: str) -> None:
     """Write content to a file, creating parent directories if needed"""
@@ -94,7 +115,6 @@ def create_init_files(project_path: Path, context: Dict[str, Any]) -> None:
     # Add conditional init files
     if context.get("include_database"):
         init_files.extend([
-            "app/db/__init__.py",
             "app/crud/__init__.py",
         ])
 

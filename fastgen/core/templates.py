@@ -111,7 +111,6 @@ class TemplateRenderer:
             ("base/config.py.jinja", "app/core/config.py"),
             ("base/requirements.txt.jinja", "requirements.txt"),
             ("base/README.md.jinja", "README.md"),
-            ("base/.env.template.jinja", ".env.template"),
             ("base/.gitignore.jinja", ".gitignore"),
             ("base/__init__.py.jinja", "app/__init__.py"),
         ]
