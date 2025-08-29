@@ -1,0 +1,87 @@
+import asyncio
+from typing import AsyncGenerator
+
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.pool import AsyncAdaptedQueuePool
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from backend.app.core.config import settings
+from backend.app.core.logger import get_logger
+
+logger = get_logger()
+
+
+def load_models():
+    """Import models"""
+    try:
+        from backend.app.models.user import User  # example
+        logger.info("Models imported successfully")
+    except Exception as e:
+        logger.error(f"Error importing models: {e}")
+        raise
+
+
+engine = create_async_engine(
+    settings.DATABASE_URL,
+    poolclass=AsyncAdaptedQueuePool,
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10,
+    pool_timeout=30,
+    pool_recycle=1800,
+    echo=False,
+)
+
+async_session = async_sessionmaker(
+    engine, expire_on_commit=False, class_=AsyncSession
+)
+
+
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    session = async_session()
+    try:
+        yield session
+    except Exception as e:
+        logger.error(f"Database session error: {e}")
+        if session:
+            try:
+                await session.rollback()
+                logger.info("Successfully rolled back session after error")
+            except Exception as rollback_error:
+                logger.error(f"Error during session rollback: {rollback_error}")
+        raise
+    finally:
+        if session:
+            try:
+                await session.close()
+                logger.debug("Database session closed successfully")
+            except Exception as close_error:
+                logger.error(f"Error closing database session: {close_error}")
+
+
+async def init_db() -> None:
+    """Initialize database and check connection"""
+    load_models()
+    for attempt in range(3):
+        try:
+            async with engine.begin() as conn:
+                await conn.execute(text("SELECT 1"))
+            logger.info("Database connection verified")
+            return
+        except Exception as e:
+            logger.warning(f"Attempt {attempt+1} failed: {e}")
+            await asyncio.sleep(2)
+    raise RuntimeError("Database initialization failed")
+
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Alternative dependency function name (commonly used)
+    Usage: db: AsyncSession = Depends(get_db)
+    """
+    async for session in get_session():
+        yield session
+
+
+async def close_db() -> None:
+    await engine.dispose()

@@ -120,44 +120,47 @@ class TemplateRenderer:
         # Conditional templates based on provided user features
         if context.get("include_database"):
             mappings.update({
-                "base/database.py.j2": "app/db/database.py",
-                "base/models.py.j2": "app/models/__init__.py",
-                "base/schemas.py.j2": "app/schemas/__init__.py",
+                "base/database.py.jinja": "app/db/database.py",
+                "base/models.py.jinja": "app/models/__init__.py",
+                "base/schemas.py.jinja": "app/schemas/__init__.py",
             })
 
         if context.get("include_auth"):
             mappings.update({
-                "base/auth.py.j2": "app/auth/auth.py",
-                "base/security.py.j2": "app/core/security.py",
+                "base/auth.py.jinja": "app/auth/auth.py",
+                "base/security.py.jinja": "app/core/security.py",
             })
 
         if context.get("include_docker"):
             mappings.update({
-                "base/Dockerfile.j2": "Dockerfile",
-                "base/docker-compose.yml.j2": "docker-compose.yml",
+                "base/Dockerfile.jinja": "Dockerfile",
+                "base/docker-compose.yml.jinja": "docker-compose.yml",
             })
 
         if context.get("include_tests"):
             mappings.update({
-                "base/test_main.py.j2": "tests/test_main.py",
-                "base/test.py.j2": "tests/test.py",
+                "base/test_main.py.jinja": "tests/test_main.py",
+                "base/test.py.jinja": "tests/test.py",
             })
+
+        if context.get("include_loguru"):
+            mappings["base/loguru.py.jinja"] = "app/core/logger.py"
 
         if context.get("include_celery"):
             mappings.update({
-                "base/celery_app.py.j2": "app/worker/celery_app.py",
-                "base/tasks.py.j2": "app/tasks/example_tasks.py",
+                "base/celery_app.py.jinja": "app/worker/celery_app.py",
+                "base/tasks.py.jinja": "app/tasks/example_tasks.py",
             })
 
         if context.get("is_async"):
             mappings.update({
-                "async/async_db.py.j2": "app/db/async_db.py",
-                "async/async_service.py.j2": "app/services/async_service.py",
+                "async/async_db.py.jinja": "app/db/async_db.py",
             })
         else:
             mappings.update({
-                "sync/sync_db.py.j2": "app/db/sync_db.py",
-                "sync/sync_service.py.j2": "app/services/sync_service.py",
+                "sync/sync_db.py.jinja": "app/db/sync_db.py",
+                "sync/session.py.jinja": "app/db/session.py",
+                "sync/base.py.jinja": "app/db/base.py",
             })
 
         return mappings
