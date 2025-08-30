@@ -10,9 +10,9 @@ TEMPLATES_DIR = PROJECT_ROOT / "templates"
 
 FEATURES = {
     "include_database": {
-        "question": "Do you want a database? (none/postgresql)",
-        "options": ["none", "postgresql"],
-        "default": "none",
+        "question": "Do you want a database?",
+        "options": ["y", "n"],
+        "default": "n",
     },
     "include_auth": {
         "question": "Do you want authentication? (y/n)",

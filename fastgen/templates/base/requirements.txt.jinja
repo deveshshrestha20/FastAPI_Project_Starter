@@ -4,9 +4,7 @@ pydantic=={{ versions.pydantic }}
 {% if include_database %}
 sqlalchemy=={{ versions.sqlalchemy }}
 alembic=={{ versions.alembic }}
-{% if database_type == "postgresql" %}
 asyncpg=={{ versions.asyncpg }}
-{% endif %}
 {% endif %}
 {% if include_auth %}
 passlib[bcrypt]=={{ versions.passlib }}

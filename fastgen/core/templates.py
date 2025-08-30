@@ -35,8 +35,7 @@ class TemplateContext:
         }
 
     def _to_slug(self, name: str) -> str:
-        return name.lower().replace(" ", "-").replace("_", "-")
-
+        return name.lower().replace(" ", "_").replace("-", "_")
     def _to_class_name(self, name: str) -> str:
         return "".join(word.capitalize() for word in name.replace("-", " ").replace("_", " ").split())
 
@@ -52,27 +51,30 @@ class TemplateContext:
         # Features
         for key, feature in FEATURES.items():
             answer = Prompt.ask(
-                feature["question"],
-                choices=feature["options"] if feature["options"] else None,
-                default=feature["default"]
+                feature["question"] + " (y/n)" if key == "include_database" else feature["question"],
+                choices=feature["options"] if feature.get("options") else None,
+                default=feature.get("default")
             )
 
             if key == "include_database":
-                if answer == "none":
-                    self.context["include_database"] = False
+                # Answer in boolean
+                database_enabled = answer.lower() in ("y", "yes")
+                self.context["include_database"] = database_enabled
+
+                if database_enabled:
+                    self.context["database_type"] = "postgresql"
+                    self._update_database("postgresql")
+                else:
                     self.context["database_type"] = None
                     self.context["database_url"] = ""
-                else:
-                    self.context["include_database"] = True
-                    self.context["database_type"] = answer
-                    self._update_database(answer)
+
 
             elif key == "async_mode":
                 self.context["is_async"] = answer == "async"
             else:
                 self.context[key] = answer.lower() in ["y", "yes"]
 
-        console.print("\n[green]✅ Configuration completed![/green]\n")
+        console.print("\n[green] Configuration completed![/green]\n")
 
     def _update_database(self, db_type: str) -> None:
         """Update database-specific configuration"""
@@ -156,8 +158,10 @@ class TemplateRenderer:
 
         if context.get("include_celery"):
             mappings.update({
-                "base/celery_app.py.jinja": "app/worker/celery_app.py",
-                "base/tasks.py.jinja": "app/tasks/example_tasks.py",
+                "celery/celery_app.py.jinja": "app/core/celery_app.py",
+                "celery/tasks.py.jinja": "app/tasks/tasks.py",
+                "celery/config.py.jinja": "app/tasks/email_config.py",
+                "celery/email_base.py.jinja": "app/tasks/email_base.py",
             })
             # Only add celery docker files if docker is also enabled
             if context.get("include_docker"):

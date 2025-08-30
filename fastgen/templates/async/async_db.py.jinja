@@ -8,6 +8,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.config import settings
 from app.core.logger import get_logger
+# Load Models from ....
+from {{ project_slug }}.app.models.user import User
 
 logger = get_logger()
 
@@ -15,7 +17,7 @@ logger = get_logger()
 def load_models():
     """Import models"""
     try:
-        from backend.app.models.user import User  # example
+
         logger.info("Models imported successfully")
     except Exception as e:
         logger.error(f"Error importing models: {e}")

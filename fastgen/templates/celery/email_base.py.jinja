@@ -1,0 +1,59 @@
+from jinja2 import Environment, FileSystemLoader
+from pydantic import EmailStr
+
+from {{ project_slug }}.app.tasks.email_config import TEMPLATES_DIR
+from {{ project_slug }}.app.core.logger import get_logger
+from {{ project_slug }}.app.tasks.tasks import send_email
+
+logger = get_logger()
+
+# Jinja environment for rendering email templates
+email_env = Environment(
+    loader=FileSystemLoader(TEMPLATES_DIR),
+    autoescape=True,
+)
+
+
+class EmailTemplate:
+    """
+    Minimal base class for sending HTML + plain text emails
+    via Celery tasks.
+    """
+
+    template_name: str
+    template_name_plain: str
+    subject: str
+
+    @classmethod
+    async def send_email(
+        cls,
+        email_to: EmailStr | list[EmailStr],
+        context: dict,
+        subject_override: str | None = None,
+    ) -> None:
+        try:
+            # Ensure recipients are a list
+            recipients_list = [email_to] if isinstance(email_to, EmailStr) else email_to
+
+            # Require both HTML and plain text templates
+            if not cls.template_name or not cls.template_name_plain:
+                raise ValueError("Both HTML and plain text email templates are required")
+
+            # Render templates
+            html_template = email_env.get_template(cls.template_name)
+            plain_template = email_env.get_template(cls.template_name_plain)
+            html_content = html_template.render(**context)
+            plain_content = plain_template.render(**context)
+
+            # Queue email via Celery
+            task = send_email.delay(
+                recipients=recipients_list,
+                subject=subject_override or cls.subject,
+                html_content=html_content,
+                plain_content=plain_content,
+            )
+            logger.info(f"Email task {task.id} queued for: {recipients_list}")
+
+        except Exception as e:
+            logger.error(f"Failed to queue email task for {recipients_list}: {e}")
+            raise

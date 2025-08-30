@@ -18,13 +18,7 @@ dependencies = [
   {% if include_database %}
   "sqlalchemy",
   "alembic",
-  {% if database_type == "postgresql" %}
-  "asyncpg",
-  {% elif database_type == "mysql" %}
-  "aiomysql",
-  {% elif database_type == "sqlite" %}
-  "aiosqlite",
-  {% endif %}
+    "asyncpg",
   {% endif %}
   {% if include_auth %}
   "passlib[bcrypt]",
