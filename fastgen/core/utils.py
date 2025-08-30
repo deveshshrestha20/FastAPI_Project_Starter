@@ -44,14 +44,29 @@ def create_directory_structure(project_path: Path, context: Dict[str, Any]) -> L
     if context.get("include_docker"):
         conditional_folders.extend([
             "docker",
+            "docker/fastapi",
+            "docker/postgres",
             "scripts"
         ])
+
+        # Add PostgreSQL docker folder if database is included
+        if context.get("include_database") and context.get("database_type") == "postgresql":
+            conditional_folders.append("docker/postgres")
 
     if context.get("include_celery"):
         conditional_folders.extend([
             "app/tasks",
             "app/worker"
         ])
+
+        if context.get("include_docker"):
+            conditional_folders.extend([
+                "docker/fastapi/celery",
+                "docker/fastapi/celery/beat",
+                "docker/fastapi/celery/flower",
+                "docker/fastapi/celery/worker"
+            ])
+
 
     # Combine all folders
     all_folders = base_folders + conditional_folders

@@ -29,15 +29,19 @@ versions = {
     "redis": "5.3.0",
     "loguru": "0.7.0"
 }
-
-TEMPLATE_DIR = Path("templates/base/")         # Folder where requirements.txt.jinja lives
+TEMPLATE_DIR = Path("templates")  # Parent directory
+TEMPLATE_FILE = "base/requirements.txt.jinja"
 OUTPUT_FILE = Path("requirements.txt")
 
 
+# Create Jinja2 environment
 env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
-template = env.get_template("requirements.txt.jinja")
 
+# Load and render template
+template = env.get_template(TEMPLATE_FILE)
 rendered_output = template.render(versions=versions, **context)
+
+# Write output
 with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
     f.write(rendered_output)
 

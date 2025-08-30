@@ -51,12 +51,18 @@ DATABASE_CONFIGS = {
 
 # Default versions for dependencies
 DEFAULT_VERSIONS = {
+    # Base packages
     "fastapi": "0.104.1",
     "uvicorn": "0.24.0",
     "pydantic": "2.5.0",
-    "pydantic-settings": "2.1.0",
     "sqlalchemy": "2.0.23",
     "alembic": "1.12.1",
-    "pytest": "7.4.3",
-    "python": "3.11"
+    "asyncpg": "0.29.0",
+    "passlib": "1.7.4",
+    "python_jose": "3.3.0",
+    "email_validator": "2.1.0",
+    "celery": "5.3.4",
+    "redis": "5.0.1",
+
+    "loguru": "0.7.2"
 }

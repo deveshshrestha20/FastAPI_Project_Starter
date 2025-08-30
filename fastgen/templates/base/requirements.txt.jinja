@@ -1,35 +1,22 @@
-# Base packages
 fastapi=={{ versions.fastapi }}
 uvicorn[standard]=={{ versions.uvicorn }}
 pydantic=={{ versions.pydantic }}
-
 {% if include_database %}
-# Database packages
 sqlalchemy=={{ versions.sqlalchemy }}
 alembic=={{ versions.alembic }}
 {% if database_type == "postgresql" %}
 asyncpg=={{ versions.asyncpg }}
-{% elif database_type == "mysql" %}
-aiomysql=={{ versions.aiomysql }}
-{% elif database_type == "sqlite" %}
-aiosqlite=={{ versions.aiosqlite }}
 {% endif %}
 {% endif %}
-
 {% if include_auth %}
-# Authentication packages
 passlib[bcrypt]=={{ versions.passlib }}
 python-jose[cryptography]=={{ versions.python_jose }}
 email-validator=={{ versions.email_validator }}
 {% endif %}
-
 {% if include_celery %}
-# Celery and Redis
 celery=={{ versions.celery }}
 redis=={{ versions.redis }}
 {% endif %}
-
 {% if include_loguru %}
-# Logging
 loguru=={{ versions.loguru }}
 {% endif %}

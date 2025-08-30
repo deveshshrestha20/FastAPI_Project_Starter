@@ -30,6 +30,7 @@ class TemplateContext:
             "include_database": False,
             "database_type": None,
             "database_url": "",
+            "versions": DEFAULT_VERSIONS,
             **DEFAULT_VERSIONS,
         }
 
@@ -132,9 +133,17 @@ class TemplateRenderer:
 
         if context.get("include_docker"):
             mappings.update({
-                "base/Dockerfile.jinja": "Dockerfile",
-                "base/docker-compose.yml.jinja": "docker-compose.yml",
+                # Main Docker files in root
+                "docker/docker-compose.yml.jinja": "docker-compose.yml",
+                "docker/fastapi/entrypoint.sh.jinja": "docker/fastapi/entrypoint.sh",
+                "docker/fastapi/start.sh.jinja": "docker/fastapi/start.sh",
+
+                # FastAPI specific dockerfile
+                "docker/fastapi/Dockerfile.jinja": "docker/fastapi/Dockerfile",
             })
+
+            if context.get("include_database") and context.get("database_type") == "postgresql":
+                mappings["docker/postgres/Dockerfile.jinja"] = "docker/postgres/Dockerfile"
 
         if context.get("include_tests"):
             mappings.update({
@@ -150,6 +159,13 @@ class TemplateRenderer:
                 "base/celery_app.py.jinja": "app/worker/celery_app.py",
                 "base/tasks.py.jinja": "app/tasks/example_tasks.py",
             })
+            # Only add celery docker files if docker is also enabled
+            if context.get("include_docker"):
+                mappings.update({
+                    "docker/fastapi/celery/worker/Dockerfile.jinja": "docker/fastapi/celery/worker/Dockerfile",
+                    "docker/fastapi/celery/beat/Dockerfile.jinja": "docker/fastapi/celery/beat/Dockerfile",
+                    "docker/fastapi/celery/flower/Dockerfile.jinja": "docker/fastapi/celery/flower/Dockerfile",
+                })
 
         if context.get("is_async"):
             mappings.update({
