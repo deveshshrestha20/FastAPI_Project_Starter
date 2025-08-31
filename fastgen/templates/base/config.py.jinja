@@ -9,6 +9,7 @@ from pydantic import Field
 class Settings(BaseSettings):
     """Application settings"""
 
+    API_V1_STR: str = Field(default="/api/v1", description="API V1 prefix")
     # App settings
     APP_NAME: str = "{{ project_name }}"
     APP_VERSION: str = "{{ version }}"

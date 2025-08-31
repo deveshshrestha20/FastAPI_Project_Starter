@@ -2,7 +2,7 @@ from fastapi_mail import FastMail, ConnectionConfig
 from pydantic import SecretStr
 from pathlib import Path
 
-from {{ project_slug }}.app.core.config import settings
+from app.core.config import settings
 
 # Templates folder (for email HTML templates)
 TEMPLATES_DIR = Path(__file__).parent / "templates"

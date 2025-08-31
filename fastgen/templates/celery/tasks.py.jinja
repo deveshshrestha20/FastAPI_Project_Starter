@@ -4,9 +4,9 @@ from fastapi_mail import MessageSchema, MessageType, MultipartSubtypeEnum
 
 
 
-from {{ project_slug }}.app.core.celery_app import celery_app
-from {{ project_slug }}.app.core.logger import get_logger
-from {{ project_slug }}.app.tasks.email_config import fastmail
+from app.core.celery_app import celery_app
+from app.core.logger import get_logger
+from app.tasks.email_config import fastmail
 
 logger = get_logger()
 

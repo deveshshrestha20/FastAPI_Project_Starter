@@ -1,9 +1,9 @@
 from jinja2 import Environment, FileSystemLoader
 from pydantic import EmailStr
 
-from {{ project_slug }}.app.tasks.email_config import TEMPLATES_DIR
-from {{ project_slug }}.app.core.logger import get_logger
-from {{ project_slug }}.app.tasks.tasks import send_email
+from app.tasks.email_config import TEMPLATES_DIR
+from app.core.logger import get_logger
+from app.tasks.tasks import send_email
 
 logger = get_logger()
 

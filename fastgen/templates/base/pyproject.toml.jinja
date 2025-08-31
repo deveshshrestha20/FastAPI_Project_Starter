@@ -1,50 +1,57 @@
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "{{ project_slug }}"
-version = "{{ version }}"
+[tool.poetry]
+name = "{{ project_name }}"
+version = "0.1.0"
 description = "{{ description }}"
-authors = [
-  { name="{{ author }}", email="{{ email }}" }
-]
-requires-python = ">=3.9"
+authors = ["{{ author | default('Your Name <you@example.com>') }}"]
+readme = "README.md"
+packages = [{ include = "app" }]
 
-dependencies = [
-  "fastapi",
-  "uvicorn[standard]",
-  "pydantic",
-  {% if include_database %}
-  "sqlalchemy",
-  "alembic",
-    "asyncpg",
-  {% endif %}
-  {% if include_auth %}
-  "passlib[bcrypt]",
-  "python-jose[cryptography]",
-  "email-validator",
-  {% endif %}
-  {% if include_celery %}
-  "celery",
-  "redis",
-  {% endif %}
-  {% if include_loguru %}
-  "loguru",
-  {% endif %}
-]
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "*"
+uvicorn = { extras = ["standard"], version = "*" }
+pydantic = "*"
+pydantic-settings = "*"
 
-[project.optional-dependencies]
-dev = [
-  "pytest",
-  "httpx",
-  "black",
-  "isort",
-]
+{% if include_database %}
+# Database dependencies
+sqlalchemy = "*"
+alembic = "*"
+asyncpg = "*"
+{% endif %}
 
-[tool.setuptools.packages.find]
-where = ["."]
-exclude = ["tests*"]
+{% if include_auth %}
+# Authentication & security
+passlib = { extras = ["bcrypt"], version = "*" }
+python-jose = { extras = ["cryptography"], version = "*" }
+email-validator = "*"
+{% endif %}
 
-[project.scripts]
-{{ project_slug }} = "app.main:app"
+{% if include_celery %}
+# Celery & background tasks
+celery = "*"
+redis = "*"
+kombu = "*"
+amqp = "*"
+flower = "*"
+fastapi-mail = "*"
+{% endif %}
+
+{% if include_loguru %}
+# Logging
+loguru = "*"
+{% endif %}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+httpx = "*"
+black = "*"
+ruff = "*"
+pre-commit = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+{{ project_name }} = "app.main:app"

@@ -4,7 +4,7 @@ from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
 from rich.prompt import Prompt
 
-from .config import TEMPLATES_DIR, FEATURES, DEFAULT_VERSIONS
+from .config import TEMPLATES_DIR, FEATURES, DEFAULT_VERSIONS, collect_postgresql_config, generate_env_file
 
 console = Console()
 
@@ -63,7 +63,7 @@ class TemplateContext:
 
                 if database_enabled:
                     self.context["database_type"] = "postgresql"
-                    self._update_database("postgresql")
+                    self.context["database_url"] = "postgresql+asyncpg://user:password@localhost:5432/dbname"
                 else:
                     self.context["database_type"] = None
                     self.context["database_url"] = ""
@@ -82,6 +82,23 @@ class TemplateContext:
             self.context["database_url"] = "postgresql+asyncpg://user:password@localhost:5432/dbname"
         else:
             self.context["database_url"] = ""
+    #
+    # def setup_database(self, project_path: Path) -> None:
+    #     """Collect DB config and generate .env.local if database is enabled."""
+    #     if not self.context.get("include_database"):
+    #         return  # skip if no database
+    #
+    #     db_config = collect_postgresql_config(
+    #         project_slug=self.context["project_slug"],
+    #         is_async=self.context.get("is_async", True)
+    #     )
+    #
+    #     # Save DB dependencies for pyproject.toml or requirements
+    #     self.context["database_dependencies"] = db_config["dependencies"]
+    #     self.context["database_url"] = db_config["database_url"]
+    #
+    #     # Generate .env.local in envs folder
+    #     generate_env_file(project_path, db_config, self.context)
 
 class TemplateRenderer:
     """Render Jinja2 template based on the user provided features."""
@@ -112,10 +129,11 @@ class TemplateRenderer:
         base_templates = [
             ("base/main.py.jinja", "app/main.py"),
             ("base/config.py.jinja", "app/core/config.py"),
-            ("base/requirements.txt.jinja", "requirements.txt"),
             ("base/README.md.jinja", "README.md"),
             ("base/.gitignore.jinja", ".gitignore"),
             ("base/__init__.py.jinja", "app/__init__.py"),
+            ("base/pyproject.toml.jinja", "pyproject.toml"),
+            ("base/api_v1__init__.py.jinja", "app/api/v1/__init__.py"),
         ]
         mappings.update(dict(base_templates))
 
