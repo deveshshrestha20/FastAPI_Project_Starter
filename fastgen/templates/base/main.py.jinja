@@ -9,19 +9,19 @@ from fastapi import FastAPI{% if include_database %}, Depends{% endif %}{% if in
 from fastapi.security import HTTPBearer
 {% endif %}
 {% if include_database %}
-from {{ project_name }}.app.core.config import settings
-from {{ project_name }}.app.db.database import get_db, init_db, close_db, get_session, load_models
+from app.core.config import settings
+from app.db.database import get_db, init_db, close_db, get_session, load_models
 {#from app.models import Base#}
 {% else %}
-from {{ project_name }}.app.core.config import settings
+from app.core.config import settings
 {% endif %}
 {% if include_loguru %}
-from {{ project_name }}.app.core.logger import get_logger
+from app.core.logger import get_logger
 {% endif %}
 from sqlalchemy import text
 
 # API Route imports
-from {{ project_name }}.app.api.v1 import api_router
+from app.api.v1 import api_router
 {% if include_auth %}
 {#from app.auth import auth_router#}
 {% endif %}
@@ -58,6 +58,7 @@ security = HTTPBearer()
 async def lifespan(app: FastAPI):
     try:
         await init_db()
+        print("Database connected successfully")
 {% if include_loguru %}
         logger.info("Async DB initialized")
 {% endif %}
@@ -69,6 +70,7 @@ async def lifespan(app: FastAPI):
 async def lifespan(app: FastAPI):
     """Initialize DB tables on startup (sync)"""
     init_db()
+    print("Database connected successfully")
     try:
         yield
     finally:

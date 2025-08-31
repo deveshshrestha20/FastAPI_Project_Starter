@@ -1,5 +1,6 @@
 import getpass
 from pathlib import Path
+from urllib.parse import quote_plus
 
 # ------------------------------
 # Project Directories
@@ -75,8 +76,11 @@ def collect_postgresql_config(project_slug: str, is_async: bool = True) -> dict:
         if not use_empty:
             password = getpass.getpass("Please enter a password: ")
 
+    # URL-encode the password to safely handle special characters like @, :, /
+    encoded_password = quote_plus(password)
+
     url_template = POSTGRESQL_CONFIG["async_url_template"] if is_async else POSTGRESQL_CONFIG["sync_url_template"]
-    database_url = url_template.format(user=user, password=password, host=host, port=port, database=database)
+    database_url = url_template.format(user=user, password=encoded_password, host=host, port=port, database=database)
 
     return {
         "database_url": database_url,
