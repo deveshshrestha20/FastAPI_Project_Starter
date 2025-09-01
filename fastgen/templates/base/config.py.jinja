@@ -1,13 +1,23 @@
 """
 Configuration settings for {{ project_name }}
 """
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
+BASE_DIR = Path(__file__).parent.parent  # points to project root
+ENV_FILE = BASE_DIR / "envs" / ".env.local"
+
 
 class Settings(BaseSettings):
     """Application settings"""
+
+    POSTGRES_HOST: str
+    POSTGRES_PORT: int
+    POSTGRES_DB: str
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
 
     API_V1_STR: str = Field(default="/api/v1", description="API V1 prefix")
     # App settings
@@ -52,11 +62,22 @@ class Settings(BaseSettings):
     )
     {% endif %}
 
+    # Mail settings (added)
+    MAIL_FROM: str = Field(default="no-reply@example.com")
+    MAIL_FROM_NAME: str = "My App"
+    MAIL_SERVER: str = Field(default="smtp.example.com")
+    MAIL_PORT: int = Field(default=587)
+    MAIL_USERNAME: str = Field(default="username")
+    MAIL_PASSWORD: str = Field(default="password")
+    MAIL_TLS: bool = Field(default=True)
+    MAIL_SSL: bool = Field(default=False)
+
+
     # Environment
     ENVIRONMENT: str = Field(default="development", description="Environment")
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(ENV_FILE),
         env_file_encoding="utf-8",
         env_ignore_empty=True,
         extra="ignore",  # Ignore unknown env vars

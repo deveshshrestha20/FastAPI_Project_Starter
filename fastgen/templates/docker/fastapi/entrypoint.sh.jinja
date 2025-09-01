@@ -3,7 +3,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-
+{% if include_database %}
 python <<END
 import sys
 import time
@@ -13,23 +13,6 @@ RETRY_INTERVAL = 5
 start_time = time.time()
 
 {% if is_async %}
-import psycopg
-
-def check_database():
-    try:
-        psycopg.connect(
-            dbname="${POSTGRES_DB}",
-            user="${POSTGRES_USER}",
-            password="${POSTGRES_PASSWORD}",
-            host="${POSTGRES_HOST}",
-            port="${POSTGRES_PORT}",
-        )
-        return True
-    except psycopg.OperationalError as error:
-        elapsed = int(time.time() - start_time)
-        sys.stderr.write(f"[SYNC] Connection failed after {elapsed}s: {error}\n")
-        return False
-{% else %}
 import asyncio
 import asyncpg
 
@@ -43,25 +26,40 @@ async def check_database():
             port=int("${POSTGRES_PORT}"),
         )
         await conn.close()
+        print("✓ Async PostgreSQL connection successful")
         return True
     except Exception as error:
         elapsed = int(time.time() - start_time)
         sys.stderr.write(f"[ASYNC] Connection failed after {elapsed}s: {error}\n")
         return False
 
-# wrap async function
 def check_database_sync():
     return asyncio.run(check_database())
+{% else %}
+import psycopg2
+
+def check_database_sync():
+    try:
+        conn = psycopg2.connect(
+            dbname="${POSTGRES_DB}",
+            user="${POSTGRES_USER}",
+            password="${POSTGRES_PASSWORD}",
+            host="${POSTGRES_HOST}",
+            port="${POSTGRES_PORT}",
+        )
+        conn.close()
+        print("✓ Sync PostgreSQL connection successful")
+        return True
+    except psycopg2.OperationalError as error:
+        elapsed = int(time.time() - start_time)
+        sys.stderr.write(f"[SYNC] Connection failed after {elapsed}s: {error}\n")
+        return False
 {% endif %}
 
+print("Waiting for PostgreSQL to be ready...")
 while True:
-    {% if database_sync %}
-    if check_database():
-        break
-    {% else %}
     if check_database_sync():
         break
-    {% endif %}
 
     if time.time() - start_time > MAX_WAIT_SECONDS:
         sys.stderr.write("Database connection could not be established after 30 seconds\n")
@@ -73,8 +71,14 @@ END
 
 echo >&2 "PostgreSQL is ready to accept connections"
 
-# Run migrations if needed
-# alembic upgrade head
+# Run database migrations if Alembic is configured
+if [ -f "alembic.ini" ]; then
+    echo "Running database migrations..."
+    alembic upgrade head
+fi
+{% else %}
+echo "No database configuration - skipping database checks"
+{% endif %}
 
 # Execute final CMD
 exec "$@"

@@ -2,11 +2,9 @@ from celery import Celery
 from app.core.config import settings
 
 celery_app = Celery(
-"worker",
-    broker=f"amqp://{settings.RABBITMQ_USER}:{settings.RABBITMQ_PASSWORD}@{settings.RABBITMQ_HOST}:{settings.RABBITMQ_PORT}//",
-    backend=f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.REDIS_DB}",
-
-
+    "worker",
+    broker=settings.CELERY_BROKER_URL,        # Redis broker
+    backend=settings.CELERY_RESULT_BACKEND,   # Redis backend
 )
 
 celery_app.conf.update(
@@ -19,10 +17,10 @@ celery_app.conf.update(
     result_extended=True,
     result_backend_always_retry=True,
     result_expires=3600,
-    time_task_limit=5*60,
+    task_time_limit=5*60,
     task_soft_time_limit=5*60,
     worker_send_task_event=True,
-    tasks_acks_late=True,
+    task_acks_late=True,
     task_reject_on_worker_lost=True,
     worker_prefetch_multiplier=1,
     task_default_retry_delay=300,

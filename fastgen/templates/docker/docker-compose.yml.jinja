@@ -1,0 +1,137 @@
+version: '3.8'
+
+services:
+  {% if include_traefik %}
+  traefik:
+    image: docker.io/traefik:v3.2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./docker/traefik/traefik.yml:/etc/traefik/traefik.yml
+    networks:
+      - {{ project_slug }}_network
+    command:
+      - --providers.docker
+  {% endif %}
+
+  api: &api
+    build:
+      context: .
+      dockerfile: ./docker/fastapi/Dockerfile
+    volumes:
+      - .:/app
+      - ./app/logs:/app/logs
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./envs/.env.local
+    {% if include_database or include_celery %}
+    depends_on:
+      {% if include_database %}
+      - postgres
+      {% endif %}
+      {% if include_celery %}
+      - redis
+      {% endif %}
+    {% endif %}
+    command: /start.sh
+    networks:
+      - {{ project_slug }}_network
+
+  {% if include_database %}
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - {{ project_slug }}_postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - {{ project_slug }}_network
+  {% endif %}
+
+  {% if include_celery %}
+  redis:
+    image: docker.io/redis:7.0-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - {{ project_slug }}_redis_data:/data
+    networks:
+      - {{ project_slug }}_network
+
+  celery_worker:
+    <<: *api
+    ports: []
+    command: /docker/fastapi/celery/worker/start.sh
+    depends_on:
+      {% if include_database %}
+      - postgres
+      {% endif %}
+      - redis
+
+  celery_beat:
+    <<: *api
+    ports: []
+    command: /docker/fastapi/celery/beat/start.sh
+    depends_on:
+      {% if include_database %}
+      - postgres
+      {% endif %}
+      - redis
+
+  flower:
+    <<: *api
+    ports:
+      - "5555:5555"
+    command: /docker/fastapi/celery/flower/start.sh
+    depends_on:
+      - redis
+  {% endif %}
+
+  {% if include_mailpit %}
+  mailpit:
+    image: docker.io/axllent/mailpit:v1.20.3
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    volumes:
+      - {{ project_slug }}_mailpit_data:/data
+    environment:
+      MP_MAX_MESSAGES: 5000
+      MP_DATA_FILE: /data/mailpit.db
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    networks:
+      - {{ project_slug }}_network
+    {% if include_traefik %}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mailpit.entrypoints=web"
+      - "traefik.http.routers.mailpit.rule=Host(`mailpit.localhost`)"
+      - "traefik.http.routers.mailpit.service=mailpit-service"
+      - "traefik.http.services.mailpit-service.loadbalancer.server.port=8025"
+    {% endif %}
+  {% endif %}
+
+networks:
+  {{ project_slug }}_network:
+    driver: bridge
+
+volumes:
+  {% if include_database %}
+  {{ project_slug }}_postgres_data:
+  {% endif %}
+  {% if include_celery %}
+  {{ project_slug }}_redis_data:
+  {% endif %}
+  {% if include_mailpit %}
+  {{ project_slug }}_mailpit_data:
+  {% endif %}

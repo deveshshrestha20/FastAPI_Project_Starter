@@ -1,0 +1,30 @@
+#!/bin/bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+echo "Starting Celery Worker (Sync Mode) with auto-reload..."
+
+{% if include_database %}
+# Wait for database
+while ! nc -z ${POSTGRES_HOST:-postgres} ${POSTGRES_PORT:-5432}; do
+    echo "Waiting for PostgreSQL..."
+    sleep 1
+done
+echo "✓ PostgreSQL is ready"
+{% endif %}
+
+# Wait for Redis
+while ! nc -z ${REDIS_HOST:-redis} ${REDIS_PORT:-6379}; do
+    echo "Waiting for Redis..."
+    sleep 1
+done
+echo "✓ Redis is ready"
+
+# Start Celery Worker with watchfiles for auto-reload
+exec watchfiles \
+    --filter python \
+    --ignore-paths '.venv,.git,__pycache__,*.pyc,logs' \
+    celery.__main__.main \
+    --args '-A app.core.celery_app worker --pool=prefork --concurrency=4 -l INFO'

@@ -51,38 +51,41 @@ class ProjectGenerator:
             self._validate_project()
             self._create_project_directory()
 
-            # IMPORTANT: Collect database config BEFORE starting progress spinner
-            db_config = None
+            # Collect database config if database feature is enabled
             if self.context_manager.context.get("include_database"):
                 console.print("\n[bold yellow]Database Configuration Required[/bold yellow]")
                 db_config = collect_postgresql_config(
                     self.context_manager.context["project_slug"],
                     is_async=self.context_manager.context.get("is_async", True)
                 )
-                self.context_manager.context["database_url"] = db_config["database_url"]
+
+                # Add database config to template context
+                self.context_manager.context.update({
+                    "database_url": db_config["database_url"],
+                    "db_host": db_config["db_host"],
+                    "db_port": db_config["db_port"],
+                    "db_name": db_config["db_name"],
+                    "db_user": db_config["db_user"],
+                    "db_password": db_config["db_password"],
+                })
+
                 console.print("[green]✓ Database configuration completed[/green]\n")
 
-            # Now start the progress spinner for file operations
+            # ----------------------------
+            # Progress spinner for file operations
+            # ----------------------------
             with Progress(
                     SpinnerColumn(),
                     TextColumn("[progress.description]{task.description}"),
                     console=console,
             ) as progress:
 
-                # Step 1: Create folder structure
                 progress.add_task("Creating folder structure...", total=None)
                 create_directory_structure(self.project_path, self.context_manager.context)
 
-                # Step 2: Generate .env file if database is enabled
-                if self.context_manager.context.get("include_database") and db_config:
-                    progress.add_task("Generating environment files...", total=None)
-                    generate_env_file(self.project_path, db_config, self.context_manager.context)
-
-                # Step 3: Render and write templates
                 progress.add_task("Generating files from templates...", total=None)
                 self._render_templates()
 
-                # Step 4: Create additional files (e.g., __init__.py)
                 progress.add_task("Creating additional files...", total=None)
                 create_init_files(self.project_path, self.context_manager.context)
 
@@ -159,7 +162,8 @@ class ProjectGenerator:
 @app.command()
 def create(
         project_name: str = typer.Argument(..., help="Name of the FastAPI project to create"),
-        interactive: bool = typer.Option(False, "--interactive", "-i", help="Interactive mode for project configuration")
+        interactive: bool = typer.Option(False, "--interactive", "-i",
+                                         help="Interactive mode for project configuration")
 ):
     """Create a new FastAPI project"""
     console.print(Panel.fit(

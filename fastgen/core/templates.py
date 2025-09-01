@@ -82,23 +82,32 @@ class TemplateContext:
             self.context["database_url"] = "postgresql+asyncpg://user:password@localhost:5432/dbname"
         else:
             self.context["database_url"] = ""
-    #
-    # def setup_database(self, project_path: Path) -> None:
-    #     """Collect DB config and generate .env.local if database is enabled."""
-    #     if not self.context.get("include_database"):
-    #         return  # skip if no database
-    #
-    #     db_config = collect_postgresql_config(
-    #         project_slug=self.context["project_slug"],
-    #         is_async=self.context.get("is_async", True)
-    #     )
-    #
-    #     # Save DB dependencies for pyproject.toml or requirements
-    #     self.context["database_dependencies"] = db_config["dependencies"]
-    #     self.context["database_url"] = db_config["database_url"]
-    #
-    #     # Generate .env.local in envs folder
-    #     generate_env_file(project_path, db_config, self.context)
+
+    def setup_database(self, project_path: Path) -> None:
+        """Collect DB config and generate .env.local if database is enabled."""
+        if not self.context.get("include_database"):
+            return  # skip if no database
+
+        from .config import collect_postgresql_config, generate_env_file
+
+        db_config = collect_postgresql_config(
+            project_slug=self.context["project_slug"],
+            is_async=self.context.get("is_async", True)
+        )
+
+        # Update context with database configuration
+        self.context.update({
+            "database_dependencies": db_config["dependencies"],
+            "database_url": db_config["database_url"],
+            "db_host": db_config["db_host"],
+            "db_port": db_config["db_port"],
+            "db_name": db_config["db_name"],
+            "db_user": db_config["db_user"],
+            "db_password": db_config.get("db_password", "")
+        })
+
+        # Generate .env file
+        generate_env_file(project_path, db_config, self.context)
 
 class TemplateRenderer:
     """Render Jinja2 template based on the user provided features."""
@@ -134,6 +143,7 @@ class TemplateRenderer:
             ("base/__init__.py.jinja", "app/__init__.py"),
             ("base/pyproject.toml.jinja", "pyproject.toml"),
             ("base/api_v1__init__.py.jinja", "app/api/v1/__init__.py"),
+            ("base/.env.jinja", "envs/.env.local"),
         ]
         mappings.update(dict(base_templates))
 
@@ -159,7 +169,7 @@ class TemplateRenderer:
                 "docker/fastapi/start.sh.jinja": "docker/fastapi/start.sh",
 
                 # FastAPI specific dockerfile
-                "docker/fastapi/Dockerfile.jinja": "docker/fastapi/Dockerfile",
+                "docker/fastapi/Dockerfile": "docker/fastapi/Dockerfile",
             })
 
             if context.get("include_database") and context.get("database_type") == "postgresql":
@@ -181,13 +191,20 @@ class TemplateRenderer:
                 "celery/config.py.jinja": "app/tasks/email_config.py",
                 "celery/email_base.py.jinja": "app/tasks/email_base.py",
             })
-            # Only add celery docker files if docker is also enabled
+            # Celery scripts (only if docker is enabled)
             if context.get("include_docker"):
-                mappings.update({
-                    "docker/fastapi/celery/worker/Dockerfile.jinja": "docker/fastapi/celery/worker/Dockerfile",
-                    "docker/fastapi/celery/beat/Dockerfile.jinja": "docker/fastapi/celery/beat/Dockerfile",
-                    "docker/fastapi/celery/flower/Dockerfile.jinja": "docker/fastapi/celery/flower/Dockerfile",
-                })
+                if context.get("is_async"):
+                    mappings.update({
+                        "docker/fastapi/celery/async/worker/start.sh.jinja": "docker/fastapi/celery/worker/start.sh",
+                        "docker/fastapi/celery/async/beat/start.sh.jinja": "docker/fastapi/celery/beat/start.sh",
+                        "docker/fastapi/celery/async/flower/start.sh.jinja": "docker/fastapi/celery/flower/start.sh",
+                    })
+                else:
+                    mappings.update({
+                        "docker/fastapi/celery/sync/worker/start.sh.jinja": "docker/fastapi/celery/worker/start.sh",
+                        "docker/fastapi/celery/sync/beat/start.sh.jinja": "docker/fastapi/celery/beat/start.sh",
+                        "docker/fastapi/celery/sync/flower/start.sh.jinja": "docker/fastapi/celery/flower/start.sh",
+                    })
 
         if context.get("is_async"):
             mappings.update({

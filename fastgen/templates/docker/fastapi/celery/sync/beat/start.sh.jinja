@@ -1,0 +1,33 @@
+#!/bin/bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+echo "Starting Celery Beat (Sync Mode) with auto-reload..."
+
+{% if include_database %}
+# Wait for database
+while ! nc -z ${POSTGRES_HOST:-postgres} ${POSTGRES_PORT:-5432}; do
+    echo "Waiting for PostgreSQL..."
+    sleep 1
+done
+echo "✓ PostgreSQL is ready"
+{% endif %}
+
+# Wait for Redis
+while ! nc -z ${REDIS_HOST:-redis} ${REDIS_PORT:-6379}; do
+    echo "Waiting for Redis..."
+    sleep 1
+done
+echo "✓ Redis is ready"
+
+# Remove any existing beat schedule file
+rm -f celerybeat-schedule
+
+# Start Celery Beat with watchfiles for auto-reload
+exec watchfiles \
+    --filter python \
+    --ignore-paths '.venv,.git,__pycache__,*.pyc,logs' \
+    celery.__main__.main \
+    --args '-A app.core.celery_app beat -l INFO'

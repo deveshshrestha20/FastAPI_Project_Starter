@@ -3,7 +3,7 @@ name = "{{ project_name }}"
 version = "0.1.0"
 description = "{{ description }}"
 authors = ["{{ author | default('Your Name <you@example.com>') }}"]
-readme = "README.md"
+{#readme = "README.md"#}
 packages = [{ include = "app" }]
 
 [tool.poetry.dependencies]
@@ -18,6 +18,7 @@ pydantic-settings = "*"
 sqlalchemy = "*"
 alembic = "*"
 asyncpg = "*"
+asgiref = "*"
 {% endif %}
 
 {% if include_auth %}

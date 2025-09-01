@@ -1,0 +1,10 @@
+#!/bin/bash
+set -o errexit
+set -o nounset
+
+echo "Starting Celery Beat..."
+while ! nc -z redis 6379; do sleep 1; done
+echo "✓ Redis is ready"
+
+rm -f celerybeat-schedule celerybeat.pid
+exec celery -A app.core.celery_app beat --loglevel=info

@@ -1,9 +1,30 @@
 #!/bin/bash
 
 set -o errexit
-
 set -o nounset
-
 set -o pipefail
 
-exec uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+echo "Starting FastAPI application..."
+
+# Debug: Check if asyncpg is available
+echo "Testing asyncpg import..."
+python -c "import asyncpg; print('asyncpg imported successfully')" || {
+    echo "ERROR: asyncpg import failed"
+    echo "Available packages:"
+    pip list | grep -i asyncpg || echo "asyncpg not found in pip list"
+    exit 1
+}
+
+# Debug: Check app structure
+echo "Current directory: $(pwd)"
+echo "Python path: $PYTHONPATH"
+echo "App directory contents:"
+ls -la app/ || echo "No app directory found"
+
+echo "Starting in async mode"
+
+# Start the FastAPI application
+exec uvicorn app.main:app \
+  --host 0.0.0.0 \
+  --port 8000 \
+  --reload

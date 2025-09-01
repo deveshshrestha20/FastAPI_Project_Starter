@@ -92,7 +92,6 @@ def create_env_files(env_folder: Path) -> None:
 
     env_files = {
         ".env.local": "# Local environment variables\n",
-        ".env.example": "# Example environment variables\n",
         ".env.production": "# Production environment variables\n"
     }
 

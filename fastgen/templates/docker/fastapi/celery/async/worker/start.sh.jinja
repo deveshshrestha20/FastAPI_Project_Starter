@@ -1,0 +1,9 @@
+#!/bin/bash
+set -o errexit
+set -o nounset
+
+echo "Starting Celery Worker..."
+while ! nc -z redis 6379; do sleep 1; done
+echo "✓ Redis is ready"
+
+exec celery -A app.core.celery_app worker --loglevel=info --pool=threads --concurrency=4
