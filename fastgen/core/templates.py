@@ -39,6 +39,15 @@ class TemplateContext:
     def _to_class_name(self, name: str) -> str:
         return "".join(word.capitalize() for word in name.replace("-", " ").replace("_", " ").split())
 
+    def _generate_database_url(self, is_async: bool = True) -> str:
+        """Generate appropriate database URL based on async/sync mode"""
+        if is_async:
+            # Use asyncpg for async operations
+            return "postgresql+asyncpg://user:password@localhost:5432/dbname"
+        else:
+            # Use psycopg2 for sync operations
+            return "postgresql+psycopg://user:password@localhost:5432/dbname"
+
     def add_interactive_context(self) -> None:
         """Ask the user for feature options interactively"""
         console.print("\n[bold blue]Project Configuration[/bold blue]\n")
@@ -55,7 +64,6 @@ class TemplateContext:
                 choices=feature["options"] if feature.get("options") else None,
                 default=feature.get("default")
             )
-
             if key == "include_database":
                 # Answer in boolean
                 database_enabled = answer.lower() in ("y", "yes")
@@ -63,18 +71,27 @@ class TemplateContext:
 
                 if database_enabled:
                     self.context["database_type"] = "postgresql"
-                    self.context["database_url"] = "postgresql+asyncpg://user:password@localhost:5432/dbname"
                 else:
                     self.context["database_type"] = None
                     self.context["database_url"] = ""
-
-
             elif key == "async_mode":
-                self.context["is_async"] = answer == "async"
-            else:
+                is_async = answer == "async"
+                self.context["is_async"] = is_async
+                if self.context.get("include_database"):
+                    self.context["database_url"] = self._generate_database_url(is_async)
+
+
+            elif feature.get("type") == "boolean":
+                # Handle other boolean features
                 self.context[key] = answer.lower() in ["y", "yes"]
 
-        console.print("\n[green] Configuration completed![/green]\n")
+            else:
+                self.context[key] = answer
+
+            if self.context.get("include_database") and not self.context.get("database_url"):
+                self.context["database_url"] = self._generate_database_url(self.context["is_async"])
+
+            console.print("\n[green] Configuration completed![/green]\n")
 
     def _update_database(self, db_type: str) -> None:
         """Update database-specific configuration"""
@@ -144,6 +161,7 @@ class TemplateRenderer:
             ("base/pyproject.toml.jinja", "pyproject.toml"),
             ("base/api_v1__init__.py.jinja", "app/api/v1/__init__.py"),
             ("base/.env.jinja", "envs/.env.local"),
+
         ]
         mappings.update(dict(base_templates))
 
@@ -221,5 +239,8 @@ class TemplateRenderer:
                 "sync/session.py.jinja": "app/db/session.py",
                 "sync/base.py.jinja": "app/db/base.py",
             })
+
+        if context.get("include_Makefile"):
+            mappings["Makefile.jinja"] = "Makefile"
 
         return mappings

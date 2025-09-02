@@ -2,11 +2,17 @@ import getpass
 from pathlib import Path
 from urllib.parse import quote_plus
 
+from rich.console import Console
+from rich.panel import Panel
+from rich.prompt import Prompt
+
 # ------------------------------
 # Project Directories
 # ------------------------------
 PROJECT_ROOT = Path(__file__).parent.parent
 TEMPLATES_DIR = PROJECT_ROOT / "templates"
+
+console = Console()
 
 # ------------------------------
 # Features / Options
@@ -16,31 +22,43 @@ FEATURES = {
         "question": "Do you want a database?",
         "options": ["y", "n"],
         "default": "n",
+        "type": "boolean",
     },
     "include_auth": {
         "question": "Do you want authentication? (y/n)",
         "options": ["y", "n"],
         "default": "n",
+        "type": "boolean",
     },
     "include_docker": {
         "question": "Do you want Docker support? (y/n)",
         "options": ["y", "n"],
         "default": "n",
+        "type": "boolean",
     },
     "include_celery": {
         "question": "Do you want Celery for background tasks? (y/n)",
         "options": ["y", "n"],
         "default": "n",
+        "type": "boolean",
     },
     "async_mode": {
         "question": "Do you want async or sync code?",
         "options": ["async", "sync"],
         "default": "async",
+        "type": "choice",
     },
     "include_loguru": {
         "question": "Do you want loguru configuration? (y/n)",
         "options": ["y", "n"],
         "default": "y",
+        "type": "boolean",
+    },
+    "include_Makefile": {
+        "question": "Do you want Makefile? (y/n)",
+        "options": ["y", "n"],
+        "default": "y",
+        "type": "boolean",
     }
 }
 
@@ -58,23 +76,33 @@ POSTGRESQL_CONFIG = {
 # Collect PostgreSQL Config
 # ------------------------------
 def collect_postgresql_config(project_slug: str, is_async: bool = True) -> dict:
-    print("\n" + "="*50)
-    print("POSTGRESQL CONFIGURATION")
-    print("="*50)
+    title = "[bold cyan]POSTGRESQL CONFIGURATION[/bold cyan]"
 
-    host = input("Database host (localhost): ").strip() or "localhost"
-    port = input(f"Database port: ").strip() or "5432"
-    database = input(f"Database name : ").strip() or f"{project_slug}_db"
-    user = input("Database username (postgres): ").strip() or "postgres"
+    # Display box with instructions
+    console.print(
+        Panel(
+            "Fill in your database details below.\n"
+            "Password input will be hidden.",
+            title=title,
+            expand=False,
+            border_style="bright_blue"
+        )
+    )
 
-    print("\nDatabase Password:")
-    print("Note: Password will be saved to .env.local. Keep this file secure!")
-    password = getpass.getpass("Database password (hidden input): ")
+    # Collect inputs
+    host = Prompt.ask("Database host", default="localhost")
+    port = Prompt.ask("Database port", default="5432")
+    database = Prompt.ask("Database name", default=f"{project_slug}_db")
+    user = Prompt.ask("Database username", default="postgres")
+
+    password = getpass.getpass("Enter password: ")
 
     if not password:
-        use_empty = input("Use empty password? [y/n] (n): ").lower().startswith('y')
+        use_empty = Prompt.ask("Use empty password? [y/n]", default="n").lower().startswith("y")
         if not use_empty:
             password = getpass.getpass("Please enter a password: ")
+
+    console.print("\n[green]✓ Database configuration completed[/green]")
 
     # URL-encode the password to safely handle special characters like @, :, /
     encoded_password = quote_plus(password)

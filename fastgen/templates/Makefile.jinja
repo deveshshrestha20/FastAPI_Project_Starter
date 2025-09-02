@@ -1,0 +1,97 @@
+
+# {{ project_name }} Makefile
+
+
+# Variables
+COMPOSE_FILE := docker-compose.yml
+API_SERVICE := api
+
+help:
+	@echo "{{ project_name }} - Available Commands"
+	@echo ""
+	@echo "Setup:"
+	@echo "  install      Install dependencies"
+	@echo "  build        Build Docker images"
+	@echo ""
+	@echo "Development:"
+	@echo "  dev          Start development environment"
+	@echo "  up           Start services"
+	@echo "  down         Stop services"
+	@echo "  restart      Restart services"
+	@echo "  logs         Show logs"
+	@echo "  shell        Open API container shell"
+	@echo ""
+	{% if include_database %}
+	@echo "Database:"
+	@echo "  migrate      Run migrations"
+	@echo "  migration    Create new migration"
+	@echo "  seed         Seed database"
+	@echo "  db-shell     Database shell"
+	@echo ""
+	{% endif %}
+	@echo "Quality:"
+	@echo "  test         Run tests"
+	@echo "  lint         Run linting"
+	@echo "  format       Format code"
+	@echo ""
+	@echo "Cleanup:"
+	@echo "  clean        Clean containers/volumes"
+
+# Setup
+install:
+	poetry install
+
+build:
+	docker-compose -f $(COMPOSE_FILE) build
+
+# Development
+dev: build up
+	@echo "Development environment ready!"
+	@echo "API: http://localhost:8000"
+	@echo "Docs: http://localhost:8000/docs"
+	{% if include_celery %}
+	@echo "Flower: http://localhost:5555"
+	{% endif %}
+	{% if include_mailpit %}
+	@echo "Mailpit: http://localhost:8025"
+	{% endif %}
+
+up:
+	docker-compose -f $(COMPOSE_FILE) up -d
+
+down:
+	docker-compose -f $(COMPOSE_FILE) down
+
+restart: down up
+
+logs:
+	docker-compose -f $(COMPOSE_FILE) logs -f
+
+shell:
+	docker-compose -f $(COMPOSE_FILE) exec $(API_SERVICE) /bin/bash
+
+{% if include_database %}
+# Database
+migrate:
+	docker-compose -f $(COMPOSE_FILE) exec $(API_SERVICE) alembic upgrade head
+
+migration:
+	@read -p "Migration message: " msg; \
+	docker-compose -f $(COMPOSE_FILE) exec $(API_SERVICE) alembic revision --autogenerate -m "$$msg"
+
+
+db-shell:
+	docker-compose -f $(COMPOSE_FILE) exec postgres psql -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+{% endif %}
+
+{% if include_celery %}
+# Celery
+celery-logs:
+	docker-compose -f $(COMPOSE_FILE) logs -f celery_worker
+{% endif %}
+
+
+# Cleanup
+clean:
+	docker-compose -f $(COMPOSE_FILE) down -v
+	docker system prune -f
