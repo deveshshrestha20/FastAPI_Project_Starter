@@ -68,7 +68,7 @@ FEATURES = {
 POSTGRESQL_CONFIG = {
     "dependencies": ["sqlalchemy", "asyncpg", "psycopg"],
     "async_url_template": "postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}",
-    "sync_url_template": "postgresql://{user}:{password}@{host}:{port}/{database}",
+    "sync_url_template": "postgresql+psycopg://{user}:{password}@{host}:{port}/{database}",
     "default_port": "5432"
 }
 
@@ -77,7 +77,6 @@ POSTGRESQL_CONFIG = {
 # ------------------------------
 def collect_postgresql_config(project_slug: str, is_async: bool = True) -> dict:
     title = "[bold cyan]POSTGRESQL CONFIGURATION[/bold cyan]"
-
     # Display box with instructions
     console.print(
         Panel(
@@ -102,7 +101,7 @@ def collect_postgresql_config(project_slug: str, is_async: bool = True) -> dict:
         if not use_empty:
             password = getpass.getpass("Please enter a password: ")
 
-    console.print("\n[green]✓ Database configuration completed[/green]")
+    console.print("\n[green] Database configuration completed[/green]")
 
     # URL-encode the password to safely handle special characters like @, :, /
     encoded_password = quote_plus(password)
@@ -110,8 +109,6 @@ def collect_postgresql_config(project_slug: str, is_async: bool = True) -> dict:
     url_template = POSTGRESQL_CONFIG["async_url_template"] if is_async else POSTGRESQL_CONFIG["sync_url_template"]
     database_url = url_template.format(user=user, password=encoded_password, host=host, port=port, database=database)
 
-    console.print(f"\n[green]✓ Database configuration completed[/green]")
-    console.print(f"[bold]Final DATABASE_URL:[/bold] {database_url}\n")  # Debug print
 
     return {
         "database_url": database_url,

@@ -1,10 +1,9 @@
-from pathlib import Path
 from typing import Dict, Any
 from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
 from rich.prompt import Prompt
 
-from .config import TEMPLATES_DIR, FEATURES, DEFAULT_VERSIONS, collect_postgresql_config, generate_env_file
+from .config import TEMPLATES_DIR, FEATURES, DEFAULT_VERSIONS
 
 console = Console()
 
@@ -18,7 +17,7 @@ class TemplateContext:
 
     def _build_base_context(self) -> Dict[str, Any]:
         """Initialize base context with defaults"""
-        return {
+        base_context = {
             "project_name": self.project_name,
             "project_slug": self._to_slug(self.project_name),
             "project_class": self._to_class_name(self.project_name),
@@ -26,27 +25,24 @@ class TemplateContext:
             "email": "your.email@example.com",
             "version": "0.1.0",
             "description": f"FastAPI project: {self.project_name}",
-            "is_async": True,  # default
-            "include_database": False,
-            "database_type": None,
-            "database_url": "",
             "versions": DEFAULT_VERSIONS,
-            **DEFAULT_VERSIONS,
         }
+
+        # Add feature defaults and convert is_async properly
+        for key, config in FEATURES.items():
+            if key == "is_async":
+                # Convert string default to boolean
+                base_context[key] = config['default'] == "async"
+            else:
+                base_context[key] = config['default']
+
+        return base_context
 
     def _to_slug(self, name: str) -> str:
         return name.lower().replace(" ", "_").replace("-", "_")
+
     def _to_class_name(self, name: str) -> str:
         return "".join(word.capitalize() for word in name.replace("-", " ").replace("_", " ").split())
-
-    def _generate_database_url(self, is_async: bool = True) -> str:
-        """Generate appropriate database URL based on async/sync mode"""
-        if is_async:
-            # Use asyncpg for async operations
-            return "postgresql+asyncpg://user:password@localhost:5432/dbname"
-        else:
-            # Use psycopg for sync operations
-            return "postgresql+psycopg://user:password@localhost:5432/dbname"
 
     def add_interactive_context(self) -> None:
         """Ask the user for feature options interactively"""
@@ -58,76 +54,33 @@ class TemplateContext:
         self.context["description"] = Prompt.ask("Project description", default=self.context["description"])
 
         # Features
+        console.print("\n[bold]Configure Features:[/bold]")
         for key, feature in FEATURES.items():
-            answer = Prompt.ask(
-                feature["question"] + " (y/n)" if key == "include_database" else feature["question"],
-                choices=feature["options"] if feature.get("options") else None,
-                default=feature.get("default")
-            )
-            if key == "include_database":
-                # Answer in boolean
-                database_enabled = answer.lower() in ("y", "yes")
-                self.context["include_database"] = database_enabled
+            if feature.get("type") == "boolean":
+                answer = Prompt.ask(
+                    f"{feature['question']} (y/n)",
+                    choices=["y", "n"],
+                    default=feature['default']
+                )
+                self.context[key] = answer.lower() == "y"
 
-                if database_enabled:
-                    self.context["database_type"] = "postgresql"
+            elif feature.get("type") == "choice":
+                answer = Prompt.ask(
+                    feature["question"],
+                    choices=feature["options"],
+                    default=feature["default"]
+                )
+                # Handle is_async specially - convert to boolean
+                if key == "is_async":
+                    self.context[key] = answer == "async"
                 else:
-                    self.context["database_type"] = None
-                    self.context["database_url"] = ""
-            elif key == "is_async":
-                is_async = answer == "async"
-                self.context["is_async"] = is_async
-                if self.context.get("include_database"):
-                    self.context["database_url"] = self._generate_database_url(is_async)
+                    self.context[key] = answer
 
+        console.print("\n[green] Configuration completed![/green]\n")
 
-            elif feature.get("type") == "boolean":
-                # Handle other boolean features
-                self.context[key] = answer.lower() in ["y", "yes"]
-
-            else:
-                self.context[key] = answer
-
-            if self.context.get("include_database") and not self.context.get("database_url"):
-                self.context["database_url"] = self._generate_database_url(self.context["is_async"])
-
-            console.print("\n[green] Configuration completed![/green]\n")
-
-    def _update_database(self, db_type: str) -> None:
-        """Update database-specific configuration"""
-        if db_type == "postgresql":
-            self.context["database_url"] = "postgresql+asyncpg://user:password@localhost:5432/dbname"
-        else:
-            self.context["database_url"] = ""
-
-    def setup_database(self, project_path: Path) -> None:
-        """Collect DB config and generate .env.local if database is enabled."""
-        if not self.context.get("include_database"):
-            return  # skip if no database
-
-        from .config import collect_postgresql_config, generate_env_file
-
-        db_config = collect_postgresql_config(
-            project_slug=self.context["project_slug"],
-            is_async=self.context.get("is_async", True)
-        )
-
-        # Update context with database configuration
-        self.context.update({
-            "database_dependencies": db_config["dependencies"],
-            "database_url": db_config["database_url"],
-            "db_host": db_config["db_host"],
-            "db_port": db_config["db_port"],
-            "db_name": db_config["db_name"],
-            "db_user": db_config["db_user"],
-            "db_password": db_config.get("db_password", "")
-        })
-
-        # Generate .env file
-        generate_env_file(project_path, db_config, self.context)
 
 class TemplateRenderer:
-    """Render Jinja2 template based on the user provided features."""
+    """Render Jinja2 templates based on user-provided features"""
 
     def __init__(self):
         self.jinja_env = Environment(
@@ -137,7 +90,7 @@ class TemplateRenderer:
         )
 
     def render_template(self, template_path: str, context: Dict[str, Any]) -> str:
-        """Render a single template with the provided context."""
+        """Render a single template with the provided context"""
         try:
             template = self.jinja_env.get_template(template_path)
             return template.render(**context)
@@ -147,11 +100,12 @@ class TemplateRenderer:
 
     def get_template_mappings(self, context: Dict[str, Any]) -> Dict[str, str]:
         """
-        Determine which templates to render based on the user's chosen features. Returns a mapping {template_path: destination_path}.
+        Determine which templates to render based on user's chosen features.
+        Returns a mapping {template_path: destination_path}.
         """
         mappings = {}
 
-        # Base templates - They are always included
+        # Base templates - always included
         base_templates = [
             ("base/main.py.jinja", "app/main.py"),
             ("base/config.py.jinja", "app/core/config.py"),
@@ -161,11 +115,10 @@ class TemplateRenderer:
             ("base/pyproject.toml.jinja", "pyproject.toml"),
             ("base/api_v1__init__.py.jinja", "app/api/v1/__init__.py"),
             ("base/.env.jinja", "envs/.env.local"),
-
         ]
         mappings.update(dict(base_templates))
 
-        # Conditional templates based on provided user features
+        # Conditional templates based on user features
         if context.get("include_database"):
             mappings.update({
                 "base/database.py.jinja": "app/db/database.py",
@@ -181,23 +134,14 @@ class TemplateRenderer:
 
         if context.get("include_docker"):
             mappings.update({
-                # Main Docker files in root
                 "docker/docker-compose.yml.jinja": "docker-compose.yml",
                 "docker/fastapi/entrypoint.sh.jinja": "docker/fastapi/entrypoint.sh",
                 "docker/fastapi/start.sh.jinja": "docker/fastapi/start.sh",
-
-                # FastAPI specific dockerfile
                 "docker/fastapi/Dockerfile": "docker/fastapi/Dockerfile",
             })
 
             if context.get("include_database"):
                 mappings["docker/postgres/Dockerfile.jinja"] = "docker/postgres/Dockerfile"
-
-        if context.get("include_tests"):
-            mappings.update({
-                "base/test_main.py.jinja": "tests/test_main.py",
-                "base/test.py.jinja": "tests/test.py",
-            })
 
         if context.get("include_loguru"):
             mappings["base/loguru.py.jinja"] = "app/core/logger.py"
@@ -208,31 +152,24 @@ class TemplateRenderer:
                 "celery/tasks.py.jinja": "app/tasks/tasks.py",
                 "celery/config.py.jinja": "app/tasks/email_config.py",
                 "celery/email_base.py.jinja": "app/tasks/email_base.py",
-                "template/welcome.html":"app/tasks/templates/welcome.html",
-                "template/welcome.txt":"app/tasks/templates/welcome.txt",
-                "template/password_reset.html":"app/tasks/templates/password_reset.html",
-                "template/password_reset.txt":"app/tasks/templates/password_reset.txt",
-
+                "template/welcome.html": "app/tasks/templates/welcome.html",
+                "template/welcome.txt": "app/tasks/templates/welcome.txt",
+                "template/password_reset.html": "app/tasks/templates/password_reset.html",
+                "template/password_reset.txt": "app/tasks/templates/password_reset.txt",
             })
-            # Celery scripts (only if docker is enabled)
+
+            # Celery Docker scripts (only if docker is enabled)
             if context.get("include_docker"):
-                if context.get("is_async"):
-                    mappings.update({
-                        "docker/fastapi/celery/async/worker/start.sh.jinja": "docker/fastapi/celery/worker/start.sh",
-                        "docker/fastapi/celery/async/beat/start.sh.jinja": "docker/fastapi/celery/beat/start.sh",
-                        "docker/fastapi/celery/async/flower/start.sh.jinja": "docker/fastapi/celery/flower/start.sh",
-                    })
-                else:
-                    mappings.update({
-                        "docker/fastapi/celery/sync/worker/start.sh.jinja": "docker/fastapi/celery/worker/start.sh",
-                        "docker/fastapi/celery/sync/beat/start.sh.jinja": "docker/fastapi/celery/beat/start.sh",
-                        "docker/fastapi/celery/sync/flower/start.sh.jinja": "docker/fastapi/celery/flower/start.sh",
-                    })
+                async_prefix = "async" if context.get("is_async") else "sync"
+                mappings.update({
+                    f"docker/fastapi/celery/{async_prefix}/worker/start.sh.jinja": "docker/fastapi/celery/worker/start.sh",
+                    f"docker/fastapi/celery/{async_prefix}/beat/start.sh.jinja": "docker/fastapi/celery/beat/start.sh",
+                    f"docker/fastapi/celery/{async_prefix}/flower/start.sh.jinja": "docker/fastapi/celery/flower/start.sh",
+                })
 
+        # Database templates based on async/sync mode
         if context.get("is_async"):
-            mappings.update({
-                "async/async_db.py.jinja": "app/db/async_db.py",
-            })
+            mappings["async/async_db.py.jinja"] = "app/db/async_db.py"
         else:
             mappings.update({
                 "sync/sync_db.py.jinja": "app/db/sync_db.py",
