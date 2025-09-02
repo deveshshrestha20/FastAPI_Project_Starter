@@ -57,3 +57,16 @@ class EmailTemplate:
         except Exception as e:
             logger.error(f"Failed to queue email task for {recipients_list}: {e}")
             raise
+
+
+# Email Templates
+class WelcomeEmail(EmailTemplate):
+    template_name = "welcome.html"
+    template_name_plain = "welcome.txt"
+    subject = "Welcome!"
+
+
+class PasswordResetEmail(EmailTemplate):
+    template_name = "password_reset.html"
+    template_name_plain = "password_reset.txt"
+    subject = "Password Reset Request"

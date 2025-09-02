@@ -20,8 +20,6 @@ def create_directory_structure(project_path: Path, context: Dict[str, Any]) -> L
         "app/schemas",
         "app/services",
         "tests",
-        "tests/api",
-        "docs",
     ]
 
     # Add conditional folders
@@ -30,7 +28,6 @@ def create_directory_structure(project_path: Path, context: Dict[str, Any]) -> L
     if context.get("include_database"):
         conditional_folders.extend([
             "app/db",
-            "app/crud",
             "alembic",
             "alembic/versions"
         ])
@@ -38,7 +35,6 @@ def create_directory_structure(project_path: Path, context: Dict[str, Any]) -> L
     if context.get("include_auth"):
         conditional_folders.extend([
             "app/auth",
-            "app/middleware"
         ])
 
     if context.get("include_docker"):
@@ -46,7 +42,6 @@ def create_directory_structure(project_path: Path, context: Dict[str, Any]) -> L
             "docker",
             "docker/fastapi",
             "docker/postgres",
-            "scripts"
         ])
 
         # Add PostgreSQL docker folder if database is included
@@ -56,7 +51,7 @@ def create_directory_structure(project_path: Path, context: Dict[str, Any]) -> L
     if context.get("include_celery"):
         conditional_folders.extend([
             "app/tasks",
-            "app/worker"
+            "app/tasks/templates",
         ])
 
         if context.get("include_docker"):
@@ -126,11 +121,6 @@ def create_init_files(project_path: Path, context: Dict[str, Any]) -> None:
         "tests/__init__.py",
     ]
 
-    # Add conditional init files
-    if context.get("include_database"):
-        init_files.extend([
-            "app/crud/__init__.py",
-        ])
 
     if context.get("include_auth"):
         init_files.append("app/auth/__init__.py")
@@ -138,7 +128,6 @@ def create_init_files(project_path: Path, context: Dict[str, Any]) -> None:
     if context.get("include_celery"):
         init_files.extend([
             "app/tasks/__init__.py",
-            "app/worker/__init__.py",
         ])
 
     # Create each init file

@@ -190,6 +190,11 @@ class TemplateRenderer:
                 "celery/tasks.py.jinja": "app/tasks/tasks.py",
                 "celery/config.py.jinja": "app/tasks/email_config.py",
                 "celery/email_base.py.jinja": "app/tasks/email_base.py",
+                "template/welcome.html":"app/tasks/templates/welcome.html",
+                "template/welcome.txt":"app/tasks/templates/welcome.txt",
+                "template/password_reset.html":"app/tasks/templates/password_reset.html",
+                "template/password_reset.txt":"app/tasks/templates/password_reset.txt",
+
             })
             # Celery scripts (only if docker is enabled)
             if context.get("include_docker"):

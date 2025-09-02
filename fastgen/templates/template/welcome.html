@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .container { background: white; padding: 30px; border: 1px solid #ddd; }
+        .button { background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome!</h1>
+        <p>Hi {{ name }},</p>
+        <p>Your account has been created successfully.</p>
+        <p>Email: {{ email }}</p>
+        <p><a href="{{ login_url }}" class="button">Login Now</a></p>
+        <p>Thanks!</p>
+    </div>
+</body>
+</html>
