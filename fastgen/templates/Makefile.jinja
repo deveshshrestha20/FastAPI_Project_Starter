@@ -6,6 +6,9 @@
 COMPOSE_FILE := docker-compose.yml
 API_SERVICE := api
 
+include envs/.env.local
+export
+
 help:
 	@echo "{{ project_name }} - Available Commands"
 	@echo ""
@@ -81,7 +84,7 @@ migration:
 
 
 db-shell:
-	docker-compose -f $(COMPOSE_FILE) exec postgres psql -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+	docker-compose -f $(COMPOSE_FILE) exec postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}
 {% endif %}
 
 {% if include_celery %}
