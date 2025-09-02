@@ -10,7 +10,7 @@ from fastapi.security import HTTPBearer
 {% endif %}
 {% if include_database %}
 from app.core.config import settings
-from app.db.database import get_db, init_db, close_db, get_session, load_models
+from app.db.database import get_db, init_db, close_db,load_models
 {#from app.models import Base#}
 {% else %}
 from app.core.config import settings
@@ -38,10 +38,9 @@ logger = get_logger()
 app = FastAPI(
     title="{{ project_name }}",
     description="{{ description }}",
-    version="{{ version }}",
+    version="settings.APP_VERSION",
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"{% if include_database %} if settings else "/openapi.json"{% endif %}
 )
 
 {% if include_auth %}
@@ -91,7 +90,7 @@ async def root():
     return {
         "message": "Welcome to {{ project_name }}",
         "status": "healthy",
-        "version": "{{ version }}",
+        "version": settings.APP_VERSION,
         "docs_url": "/docs"
     }
 

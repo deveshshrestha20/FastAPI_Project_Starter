@@ -6,12 +6,14 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
-BASE_DIR = Path(__file__).parent.parent  # points to project root
+BASE_DIR = Path(__file__).parent.parent.parent.resolve()  # points to project root
 ENV_FILE = BASE_DIR / "envs" / ".env.local"
 
 
 class Settings(BaseSettings):
     """Application settings"""
+
+    APP_VERSION: str = Field(default="1.0.0", description="App version")
 
     POSTGRES_HOST: str
     POSTGRES_PORT: int
@@ -71,6 +73,7 @@ class Settings(BaseSettings):
     MAIL_PASSWORD: str = Field(default="password")
     MAIL_TLS: bool = Field(default=True)
     MAIL_SSL: bool = Field(default=False)
+
 
 
     # Environment

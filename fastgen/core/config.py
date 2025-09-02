@@ -42,7 +42,7 @@ FEATURES = {
         "default": "n",
         "type": "boolean",
     },
-    "async_mode": {
+    "is_async": {
         "question": "Do you want async or sync code?",
         "options": ["async", "sync"],
         "default": "async",
@@ -66,7 +66,7 @@ FEATURES = {
 # PostgreSQL Configuration
 # ------------------------------
 POSTGRESQL_CONFIG = {
-    "dependencies": ["sqlalchemy", "asyncpg", "psycopg2-binary"],
+    "dependencies": ["sqlalchemy", "asyncpg", "psycopg"],
     "async_url_template": "postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}",
     "sync_url_template": "postgresql://{user}:{password}@{host}:{port}/{database}",
     "default_port": "5432"
@@ -109,6 +109,9 @@ def collect_postgresql_config(project_slug: str, is_async: bool = True) -> dict:
 
     url_template = POSTGRESQL_CONFIG["async_url_template"] if is_async else POSTGRESQL_CONFIG["sync_url_template"]
     database_url = url_template.format(user=user, password=encoded_password, host=host, port=port, database=database)
+
+    console.print(f"\n[green]✓ Database configuration completed[/green]")
+    console.print(f"[bold]Final DATABASE_URL:[/bold] {database_url}\n")  # Debug print
 
     return {
         "database_url": database_url,

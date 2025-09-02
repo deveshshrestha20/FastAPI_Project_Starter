@@ -11,5 +11,5 @@ from app.core.config import settings
 from app.db.async_db import get_db, init_db, close_db, get_session, load_models
 {% else %}
 # Sync DB selected
-from app.db.sync_db import get_db, init_db, close_db, get_session, load_models
+from app.db.sync_db import get_db, init_db, close_db, load_models
 {% endif %}

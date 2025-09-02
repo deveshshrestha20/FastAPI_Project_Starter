@@ -36,11 +36,11 @@ async def check_database():
 def check_database_sync():
     return asyncio.run(check_database())
 {% else %}
-import psycopg2
+import psycopg
 
 def check_database_sync():
     try:
-        conn = psycopg2.connect(
+        conn = psycopg.connect(
             dbname="${POSTGRES_DB}",
             user="${POSTGRES_USER}",
             password="${POSTGRES_PASSWORD}",
@@ -50,7 +50,7 @@ def check_database_sync():
         conn.close()
         print("✓ Sync PostgreSQL connection successful")
         return True
-    except psycopg2.OperationalError as error:
+    except psycopg.OperationalError as error:
         elapsed = int(time.time() - start_time)
         sys.stderr.write(f"[SYNC] Connection failed after {elapsed}s: {error}\n")
         return False

@@ -45,7 +45,7 @@ class TemplateContext:
             # Use asyncpg for async operations
             return "postgresql+asyncpg://user:password@localhost:5432/dbname"
         else:
-            # Use psycopg2 for sync operations
+            # Use psycopg for sync operations
             return "postgresql+psycopg://user:password@localhost:5432/dbname"
 
     def add_interactive_context(self) -> None:
@@ -74,7 +74,7 @@ class TemplateContext:
                 else:
                     self.context["database_type"] = None
                     self.context["database_url"] = ""
-            elif key == "async_mode":
+            elif key == "is_async":
                 is_async = answer == "async"
                 self.context["is_async"] = is_async
                 if self.context.get("include_database"):
@@ -190,7 +190,7 @@ class TemplateRenderer:
                 "docker/fastapi/Dockerfile": "docker/fastapi/Dockerfile",
             })
 
-            if context.get("include_database") and context.get("database_type") == "postgresql":
+            if context.get("include_database"):
                 mappings["docker/postgres/Dockerfile.jinja"] = "docker/postgres/Dockerfile"
 
         if context.get("include_tests"):

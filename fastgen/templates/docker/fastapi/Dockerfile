@@ -37,7 +37,7 @@ COPY pyproject.toml poetry.lock* ./
 # Configure Poetry and install dependencies globally
 RUN poetry config virtualenvs.create false && \
     poetry install --only main --no-root && \
-    rm -rf /tmp/poetry_cache
+    rm -rf /tmp/poetry_cache \
 
 # Create user and set permissions
 RUN groupadd -r ${APP_GROUP} && \
