@@ -48,10 +48,8 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - {{ project_slug }}_postgres_data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    env_file:
+      - ./envs/.env.local
     networks:
       - {{ project_slug }}_network
   {% endif %}
@@ -64,6 +62,8 @@ services:
       - "6379:6379"
     volumes:
       - {{ project_slug }}_redis_data:/data
+    env_file:
+      - ./envs/.env.local
     networks:
       - {{ project_slug }}_network
 
