@@ -116,7 +116,7 @@ async def test_database(db = Depends(get_db)):
 {% if is_async %}
         await db.execute(text("SELECT 1"))
 {% else %}
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
 {% endif %}
         return {"database": "connected"}
     except Exception as e:
