@@ -60,7 +60,8 @@ dev: build up
 	{% endif %}
 
 up:
-	docker-compose -f $(COMPOSE_FILE) up -d
+	@echo "Using compose file: $(COMPOSE_FILE)"
+	@docker-compose -f $(COMPOSE_FILE) up -d
 
 down:
 	docker-compose -f $(COMPOSE_FILE) down
