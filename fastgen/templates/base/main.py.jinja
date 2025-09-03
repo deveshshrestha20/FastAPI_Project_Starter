@@ -9,19 +9,19 @@ from fastapi import FastAPI{% if include_database %}, Depends{% endif %}{% if in
 from fastapi.security import HTTPBearer
 {% endif %}
 {% if include_database %}
-from app.core.config import settings
-from app.db.database import get_db, init_db, close_db,load_models
+from .core.config import settings
+from .db.database import get_db, init_db, close_db,load_models
 {#from app.models import Base#}
 {% else %}
-from app.core.config import settings
+from .core.config import settings
 {% endif %}
 {% if include_loguru %}
-from app.core.logger import get_logger
+from .core.logger import get_logger
 {% endif %}
 from sqlalchemy import text
 
 # API Route imports
-from app.api.v1 import api_router
+from .api.v1 import api_router
 {% if include_auth %}
 {#from app.auth import auth_router#}
 {% endif %}
