@@ -55,9 +55,8 @@ dev: build up
 	{% if include_celery %}
 	@echo "Flower: http://localhost:5555"
 	{% endif %}
-	{% if include_mailpit %}
 	@echo "Mailpit: http://localhost:8025"
-	{% endif %}
+	@echo "Traefik:  http://localhost:8080"
 
 up:
 	@echo "Using compose file: $(COMPOSE_FILE)"
