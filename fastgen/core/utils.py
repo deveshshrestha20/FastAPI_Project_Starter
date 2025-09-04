@@ -42,6 +42,7 @@ def create_directory_structure(project_path: Path, context: Dict[str, Any]) -> L
             "docker",
             "docker/fastapi",
             "docker/postgres",
+            "docker/traefik",
         ])
 
         # Add PostgreSQL docker folder if database is included

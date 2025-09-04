@@ -1,0 +1,28 @@
+api:
+  dashboard: true
+  insecure: true
+
+log:
+  level: DEBUG
+  format: json
+
+accessLog:
+  format: json
+  filePath: /var/log/traefik/access.log
+
+middleware:
+  retry:
+    retry:
+      attempts: 3
+      initialInterval: "500ms"
+
+providers:
+  docker:
+    endpoint: "unix://var/run/docker.sock"
+    watch: true
+    exposedByDefault: false
+    network: {{ project_slug }}_network
+
+entryPoints:
+  web:
+    address: ":80"

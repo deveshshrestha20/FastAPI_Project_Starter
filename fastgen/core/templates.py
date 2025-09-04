@@ -138,6 +138,7 @@ class TemplateRenderer:
                 "docker/fastapi/entrypoint.sh.jinja": "docker/fastapi/entrypoint.sh",
                 "docker/fastapi/start.sh.jinja": "docker/fastapi/start.sh",
                 "docker/fastapi/Dockerfile": "docker/fastapi/Dockerfile",
+                "docker/traefik/traefik.yml.jinja": "docker/traefik/traefik.yml",
             })
 
             if context.get("include_database"):
