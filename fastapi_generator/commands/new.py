@@ -9,7 +9,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.console import Console
 
-from fastgen.core.utils import (
+from fastapi_generator.core.utils import (
     create_directory_structure,
     create_init_files,
     cleanup_project,
@@ -22,7 +22,7 @@ from ..core.templates import TemplateRenderer, TemplateContext
 console = Console()
 
 app = typer.Typer(
-    name="fastgen",
+    name="fastapi_generator",
     help="FastAPI Template Generator - Create FastAPI projects quickly",
     rich_markup_mode="markdown"
 )
@@ -44,11 +44,11 @@ def create(
     console.print(Panel(
         f"Initializing a new FastAPI project named [bold cyan]{project_name}[/bold cyan]\n"
         f"Interactive Mode: {'[bold green]Enabled[/bold green]' if interactive else '[bold red]Disabled[/bold red]'}",
-        title=" [bold]Fastgen Project Generator[/bold] ",
+        title=" [bold]FastAPI Project Generator[/bold] ",
         border_style="blue"
     ))
 
-    project_path = Path.home() / "fastapi_test_projects" / project_name
+    project_path = Path.cwd() / project_name
     context_manager = TemplateContext(project_name)
     renderer = TemplateRenderer()
 
@@ -163,7 +163,7 @@ def list_features():
 def version():
     """Show version information"""
     from .. import __version__
-    console.print(f"🚀 [bold]Fastgen v{__version__}[/bold]")
+    console.print(f"🚀 [bold]FastAPI generator v{__version__}[/bold]")
 
 
 if __name__ == "__main__":

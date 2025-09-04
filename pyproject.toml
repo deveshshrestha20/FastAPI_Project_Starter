@@ -1,0 +1,133 @@
+[tool.poetry]
+name = "fastapi-project-starter"
+version = "1.0.1"
+description = "⚡ Fastgen - FastAPI Project Generator & Scaffolder. Create production-ready FastAPI projects with modern features."
+authors = ["Devesh Shrestha <deveshshrestha20@gmail.com>"]
+readme = "README.md"
+homepage = "https://github.com/deveshshrestha20/FastGen"
+repository = "https://github.com/deveshshrestha20/FastGen"
+documentation = "https://github.com/deveshshrestha20/FastGen#readme"
+keywords = ["fastapi", "template", "generator", "scaffold", "boilerplate", "typer", "cli", "python"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Framework :: FastAPI",
+    "Environment :: Console",
+    "Operating System :: OS Independent",
+]
+packages = [{ include = "fastapi_generator" }]
+include = [
+    "fastapi_generator/templates/**/*",
+    "fastapi_generator/core/**/*",
+    "fastapi_generator/commands/**/*",
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+typer = {extras = ["all"], version = "*"}
+jinja2 = "*"
+rich = "*"
+pydantic = "*"
+pydantic-settings = "*"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+pytest-cov = "*"
+black = "*"
+ruff = "*"
+mypy = "*"
+pre-commit = "*"
+pytest-mock = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# Entry points for the CLI
+[tool.poetry.scripts]
+fastapi_generator = "fastapi_generator.cli:main"
+
+[tool.black]
+line-length = 88
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | templates
+)/
+'''
+
+[tool.ruff]
+target-version = "py38"
+line-length = 88
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "N",   # pep8-naming
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+    "N812",  # lowercase imported as non lowercase
+]
+exclude = [
+    "fastapi_generator/templates/**",
+    ".venv",
+    "build",
+    "dist",
+]
+
+[tool.mypy]
+python_version = "3.8"
+check_untyped_defs = true
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+exclude = [
+    "fastapi_generator/templates/",
+    "build/",
+    "dist/",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=fastapi_generator",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+]

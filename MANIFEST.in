@@ -1,0 +1,15 @@
+include README.md
+include LICENSE
+include MANIFEST.in
+include pyproject.toml
+recursive-include fastapi_generator/templates *
+recursive-include fastapi_generator/core *
+recursive-include fastapi_generator/commands *
+recursive-exclude fastapi_generator/templates *.pyc
+recursive-exclude fastapi_generator/core *.pyc
+recursive-exclude fastapi_generator/commands *.pyc
+recursive-exclude * __pycache__
+global-exclude *.py[cod]
+global-exclude __pycache__
+global-exclude .DS_Store
+global-exclude .git*
