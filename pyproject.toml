@@ -4,9 +4,9 @@ version = "1.0.1"
 description = "⚡ Fastgen - FastAPI Project Generator & Scaffolder. Create production-ready FastAPI projects with modern features."
 authors = ["Devesh Shrestha <deveshshrestha20@gmail.com>"]
 readme = "README.md"
-homepage = "https://github.com/deveshshrestha20/FastGen"
-repository = "https://github.com/deveshshrestha20/FastGen"
-documentation = "https://github.com/deveshshrestha20/FastGen#readme"
+homepage = "https://github.com/deveshshrestha20/FastAPI_Project_Starter"
+repository = "https://github.com/deveshshrestha20/FastAPI_Project_Starter"
+documentation = "https://github.com/deveshshrestha20/FastAPI_Project_Starter#readme"
 keywords = ["fastapi", "template", "generator", "scaffold", "boilerplate", "typer", "cli", "python"]
 classifiers = [
     "Development Status :: 4 - Beta",
