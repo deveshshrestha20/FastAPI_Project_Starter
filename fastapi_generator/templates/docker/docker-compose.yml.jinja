@@ -21,7 +21,6 @@ services:
       dockerfile: ./docker/fastapi/Dockerfile
     volumes:
       - .:/app
-      - ./app/logs:/app/logs
     ports:
       - "8000:8000"
     env_file:

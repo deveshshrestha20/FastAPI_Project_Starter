@@ -1,5 +1,5 @@
 """
-FastAPI Template Generator - Main CLI Command (Minimal Version)
+FastAPI Template Generator
 """
 
 from pathlib import Path
@@ -16,7 +16,12 @@ from fastapi_generator.core.utils import (
     validate_project_name,
     write_file,
 )
-from ..core.config import FEATURES, collect_postgresql_config
+from fastapi_generator.core.post_deployment_setup import run_post_setup
+from ..core.config import (
+    FEATURES,
+    collect_postgresql_config,
+    collect_auto_setup_config,
+)
 from ..core.templates import TemplateRenderer, TemplateContext
 
 console = Console()
@@ -40,6 +45,7 @@ def create(
 ):
     """
     Creates a new FastAPI project with a modern, feature-based structure.
+
     """
     console.print(Panel(
         f"Initializing a new FastAPI project named [bold cyan]{project_name}[/bold cyan]\n"
@@ -49,11 +55,41 @@ def create(
     ))
 
     project_path = Path.cwd() / project_name
-    context_manager = TemplateContext(project_name)
     renderer = TemplateRenderer()
 
+    # Configuration collection
     if interactive:
-        context_manager.add_interactive_context()
+        # Use TemplateContext with interactive prompts
+        context_manager = TemplateContext(project_name)
+        context_manager.add_interactive_context()  # This calls the author/email prompts
+        context = context_manager.context
+
+        # Then collect database config if needed
+        if context.get("include_database"):
+            console.print("\n[bold yellow]Database Configuration Required[/bold yellow]")
+            db_config = collect_postgresql_config(
+                context["project_slug"],
+                is_async=context.get("is_async")
+            )
+            context.update(db_config)
+
+        # Finally collect auto-setup config
+        context = collect_auto_setup_config(context)
+
+    else:
+        # Non-interactive mode - use defaults with auto-setup enabled
+        context_manager = TemplateContext(project_name)
+        context = context_manager.context
+        context["auto_setup"] = True  # Default to auto-setup in non-interactive mode
+
+        # Handle database configuration if enabled in non-interactive mode
+        if context.get("include_database"):
+            console.print("\n[bold yellow]Database Configuration Required[/bold yellow]")
+            db_config = collect_postgresql_config(
+                context["project_slug"],
+                is_async=context.get("is_async")
+            )
+            context.update(db_config)
 
     try:
         # Validate project
@@ -71,23 +107,8 @@ def create(
         # Create project directory
         project_path.mkdir(parents=True)
 
-        # Handle database configuration if enabled
-        if context_manager.context.get("include_database"):
-            console.print("\n[bold yellow]Database Configuration Required[/bold yellow]")
-            db_config = collect_postgresql_config(
-                context_manager.context["project_slug"],
-                is_async=context_manager.context.get("is_async")
-            )
-            context_manager.context.update({
-                "database_url": db_config["database_url"],
-                "db_host": db_config["db_host"],
-                "db_port": db_config["db_port"],
-                "db_name": db_config["db_name"],
-                "db_user": db_config["db_user"],
-                "db_password": db_config["db_password"],
-            })
-
         # Create project with progress indicator
+        console.print("\n[bold cyan]📁 Creating Project Structure[/bold cyan]")
         with Progress(
                 SpinnerColumn(spinner_name="dots"),
                 TextColumn("[progress.description]{task.description}"),
@@ -95,11 +116,11 @@ def create(
         ) as progress:
             tasks = [
                 ("Creating folder structure...",
-                 lambda: create_directory_structure(project_path, context_manager.context)),
+                 lambda: create_directory_structure(project_path, context)),
                 ("Generating files from templates...",
-                 lambda: _render_templates(renderer, project_path, context_manager.context)),
+                 lambda: _render_templates(renderer, project_path, context)),
                 ("Creating __init__.py files...",
-                 lambda: create_init_files(project_path, context_manager.context)),
+                 lambda: create_init_files(project_path, context)),
             ]
 
             for desc, func in tasks:
@@ -107,22 +128,17 @@ def create(
                 func()
                 progress.update(task_id, completed=1, description=f"[green]✓[/green] {desc}")
 
-        # Success message
-        message = (
-            f"✓ Project [bold cyan]'{project_name}'[/bold cyan] created successfully!\n\n"
-            "[bold]Next Steps:[/bold]\n"
-            f"  1. [cyan]cd {project_name}[/cyan]\n"
-            "  2. [cyan]make install[/cyan]  # Install dependencies\n"
-            "  3. [cyan]make dev[/cyan]      # Start development environment\n\n"
-            "[bold]Your API will be available at:[/bold]\n"
-            "  - [link=http://127.0.0.1:8000]http://127.0.0.1:8000[/link]\n"
-            "  - [link=http://127.0.0.1:8000/docs]API Docs: http://127.0.0.1:8000/docs[/link]\n"
+        console.print("[green] Project structure created successfully![/green]")
+
+        # Run post-setup
+        setup_success = run_post_setup(
+            project_name=project_name,
+            context=context
         )
 
-        if context_manager.context.get("include_celery"):
-            message += "  - [link=http://127.0.0.1:5555]Celery Monitor: http://127.0.0.1:5555[/link]\n"
-
-        console.print(Panel(message, title=" [bold green]Success![/bold green] ", border_style="green"))
+        # Print basic message only if auto-setup was skipped
+        if not context.get("auto_setup", False):
+            _print_basic_success_message(project_name, context)
 
     except Exception as e:
         console.print(Panel(f"[bold red]An error occurred:[/bold red]\n{e}", title="Error", border_style="red"))
@@ -136,6 +152,63 @@ def _render_templates(renderer, project_path, context):
     for template_file, output_file in mappings.items():
         content = renderer.render_template(template_file, context)
         write_file(project_path / output_file, content)
+
+
+def _print_basic_success_message(project_name: str, context: dict):
+    """Print basic success message when auto-setup is skipped"""
+    message = f"✓ Project [bold cyan]'{project_name}'[/bold cyan] created successfully!\n\n"
+
+    message += (
+        "[bold]Next Steps:[/bold]\n"
+        f"  1. [cyan]cd {project_name}[/cyan]\n"
+        "  2. [cyan]make install[/cyan]  # Install dependencies\n"
+        "  3. [cyan]make dev[/cyan]      # Start development environment\n\n"
+    )
+
+    message += (
+        "[bold]Your API will be available at:[/bold]\n"
+        "  - [link=http://127.0.0.1:8000]http://127.0.0.1:8000[/link]\n"
+        "  - [link=http://127.0.0.1:8000/docs]API Docs: http://127.0.0.1:8000/docs[/link]\n"
+    )
+
+    if context.get("include_celery"):
+        message += "  - [link=http://flower.localhost]Celery Monitor: http://flower.localhost[/link]\n"
+
+    console.print(Panel(message, title=" [bold green]Project Created![/bold green] ", border_style="green"))
+
+
+@app.command("setup")
+def setup_existing(
+    project_name: str = typer.Argument(None, help="Project directory name (defaults to current directory)")
+):
+    """
+    Run setup on an existing project.
+
+    This is useful if you created a project without auto-setup
+    or if the initial setup failed.
+    """
+    if not project_name:
+        project_name = Path.cwd().name
+        project_path = Path.cwd()
+    else:
+        project_path = Path(project_name)
+
+    if not project_path.exists():
+        console.print(f"[red]❌ Project directory '{project_name}' not found![/red]")
+        raise typer.Exit(1)
+
+    # Simple context for existing projects
+    context = {
+        "project_name": project_name,
+        "auto_setup": True,
+        "include_celery": (project_path / "docker-compose.yml").exists(),
+        "include_database": (project_path / "docker-compose.yml").exists(),
+    }
+
+    success = run_post_setup(project_name=project_name, context=context)
+
+    if not success:
+        raise typer.Exit(1)
 
 
 @app.command("features")
@@ -163,7 +236,7 @@ def list_features():
 def version():
     """Show version information"""
     from .. import __version__
-    console.print(f"🚀 [bold]FastAPI generator v{__version__}[/bold]")
+    console.print(f" [bold]FastAPI generator v{__version__}[/bold]")
 
 
 if __name__ == "__main__":
