@@ -59,12 +59,10 @@ def create(
 
     # Configuration collection
     if interactive:
-        # Use TemplateContext with interactive prompts
         context_manager = TemplateContext(project_name)
-        context_manager.add_interactive_context()  # This calls the author/email prompts
+        context_manager.add_interactive_context()
         context = context_manager.context
 
-        # Then collect database config if needed
         if context.get("include_database"):
             console.print("\n[bold yellow]Database Configuration Required[/bold yellow]")
             db_config = collect_postgresql_config(
@@ -73,14 +71,13 @@ def create(
             )
             context.update(db_config)
 
-        # Finally collect auto-setup config
+        #  collect auto-setup config
         context = collect_auto_setup_config(context)
 
     else:
-        # Non-interactive mode - use defaults with auto-setup enabled
         context_manager = TemplateContext(project_name)
         context = context_manager.context
-        context["auto_setup"] = True  # Default to auto-setup in non-interactive mode
+        context["auto_setup"] = True
 
         # Handle database configuration if enabled in non-interactive mode
         if context.get("include_database"):
