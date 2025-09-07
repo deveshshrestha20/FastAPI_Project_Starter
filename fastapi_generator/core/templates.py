@@ -64,17 +64,7 @@ class TemplateContext:
                 )
                 self.context[key] = answer.lower() == "y"
 
-            elif feature.get("type") == "choice":
-                answer = Prompt.ask(
-                    feature["question"],
-                    choices=feature["options"],
-                    default=feature["default"]
-                )
-                # Handle is_async specially - convert to boolean
-                if key == "is_async":
-                    self.context[key] = answer == "async"
-                else:
-                    self.context[key] = answer
+
 
         console.print("\n[green] Configuration completed![/green]\n")
 

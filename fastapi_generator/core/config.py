@@ -43,10 +43,10 @@ FEATURES = {
         "type": "boolean",
     },
     "is_async": {
-        "question": "Do you want async or sync code?",
-        "options": ["async", "sync"],
-        "default": "async",
-        "type": "choice",
+        "question": "Do you want async(y) or sync(n) code?",
+        "options": ["y", "n"],
+        "default": "y",
+        "type": "boolean",
     },
     "include_loguru": {
         "question": "Do you want loguru configuration? (y/n)",
@@ -179,13 +179,6 @@ def collect_interactive_configuration(project_name: str) -> dict:
             default_value = config["default"] == "y"
             response = Confirm.ask(config["question"], default=default_value)
             context[key] = response
-        elif config["type"] == "choice":
-            response = Prompt.ask(
-                config["question"],
-                choices=config["options"],
-                default=config["default"]
-            )
-            context[key] = response == "async"
 
     # Database configuration if enabled
     if context.get("include_database"):

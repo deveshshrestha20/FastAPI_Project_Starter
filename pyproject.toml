@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fastapi-project-starter"
-version = "1.1.1"
+version = "1.1.2"
 description = " Fastgen - FastAPI Project Generator & Scaffolder. Create production-ready FastAPI projects with modern features."
 authors = ["Devesh Shrestha <deveshshrestha20@gmail.com>"]
 readme = "README.md"
