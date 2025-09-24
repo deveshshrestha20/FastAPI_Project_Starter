@@ -30,6 +30,12 @@ FEATURES = {
         "default": "n",
         "type": "boolean",
     },
+    "include_middlewares": {
+        "question": "Do you want middlewares( CORS, RequestID , Error Handling ) ? (y/n)",
+        "options": ["y", "n"],
+        "default": "y",
+        "type": "boolean",
+    },
     "include_docker": {
         "question": "Do you want Docker support? (y/n)",
         "options": ["y", "n"],

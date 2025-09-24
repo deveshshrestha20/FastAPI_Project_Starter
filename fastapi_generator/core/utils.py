@@ -37,6 +37,11 @@ def create_directory_structure(project_path: Path, context: Dict[str, Any]) -> L
             "app/auth",
         ])
 
+    if context.get("include_middlewares"):
+        conditional_folders.extend([
+            "app/middleware",
+        ])
+
     if context.get("include_docker"):
         conditional_folders.extend([
             "docker",

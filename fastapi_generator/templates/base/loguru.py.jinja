@@ -14,6 +14,9 @@ logger.remove()
 LOG_DIR = Path(__file__).resolve().parents[2] / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
+# Bind a default request_id so it's never missing
+logger = logger.bind(request_id="global")
+
 # Log format
 LOG_FORMAT = (
     "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | "

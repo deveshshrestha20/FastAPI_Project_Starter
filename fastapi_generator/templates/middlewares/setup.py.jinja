@@ -1,0 +1,37 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from .config import middleware_config
+from .request_id import RequestIDMiddleware
+from .error_handling import ErrorHandlingMiddleware
+from .timer import TimerMiddleware
+
+
+{% if include_loguru %}
+from ..core.logger import get_logger
+{% endif %}
+
+{% if include_loguru %}
+# Initialize logger
+logger = get_logger()
+{% endif %}
+
+
+def setup_middlewares(app: FastAPI):
+    """Register all middlewares with the FastAPI app."""
+
+    # CORS
+    if middleware_config.ENABLE_CORS:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=middleware_config.cors_origins_list,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
+
+    # Essential middlewares
+    app.add_middleware(RequestIDMiddleware)
+    app.add_middleware(ErrorHandlingMiddleware)
+    app.add_middleware(TimerMiddleware)

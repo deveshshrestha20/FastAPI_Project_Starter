@@ -1,0 +1,45 @@
+import uuid
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
+
+class RequestIDMiddleware(BaseHTTPMiddleware):
+    """
+    This middleware gives every incoming request a unique ID.
+
+    What it does:
+    - Generates a random UUID for each request.
+    - Saves it in `request.state.request_id` so your routes or other middlewares can use it.
+    - Adds it to the response header as `X-Request-ID` so clients can see it.
+
+    Why it’s useful:
+    - Makes logging easier — you can trace logs for a specific request.
+    - Helps debugging — quickly find which request caused a problem.
+    """
+
+    async def dispatch(self, request: Request, call_next) -> Response:
+        request_id = str(uuid.uuid4())
+        request.state.request_id = request_id
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        return response
+
+    # ------------------- Usage Example -------------------
+    # Access the request ID inside a route:
+    #
+    # @app.get("/example")
+    # async def example_endpoint(request: Request):
+    #     request_id = request.state.request_id
+    #     return {
+    #         "message": "Hello World",
+    #         "request_id": request_id
+    #     }
+    #
+    # Example Response Header:
+    # X-Request-ID: f47ac10b-58cc-4372-a567-0e02b2c3d479
+    #
+    # Example Response Body:
+    # {
+    #     "message": "Hello World",
+    #     "request_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+    # }

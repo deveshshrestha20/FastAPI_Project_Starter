@@ -1,0 +1,40 @@
+"""
+Middleware configuration settings for {{ project_name }}
+"""
+import os
+from pathlib import Path
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
+
+BASE_DIR = Path(__file__).parent.parent.parent.resolve()  # points to project root
+ENV_FILE = BASE_DIR / "envs" / ".env.local"
+
+
+class MiddlewareConfig(BaseSettings):
+    """Middleware configuration settings"""
+
+    # CORS settings
+    CORS_ORIGINS: str = Field(
+        default="http://localhost:3000,http://127.0.0.1:3000",
+        description="Allowed CORS origins"
+    )
+
+    # Feature flags
+    ENABLE_CORS: bool = Field(default=True, description="Enable CORS middleware")
+    ENABLE_SECURITY_HEADERS: bool = Field(default=True, description="Enable security headers middleware")
+    ENABLE_DEV_LOGGING: bool = Field(default=False, description="Enable development logging middleware")
+
+
+    @property
+    def cors_origins_list(self) -> list:
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
+
+    model_config = SettingsConfigDict(
+        env_file=str(ENV_FILE),
+        env_file_encoding="utf-8",
+        env_ignore_empty=True,
+        extra="ignore",
+        env_prefix="MW_"
+    )
+
+middleware_config = MiddlewareConfig()

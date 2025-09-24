@@ -1,0 +1,28 @@
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+{% if include_loguru %}
+from ..core.logger import get_logger
+
+#Initialize logger
+logger = get_logger()
+{%  endif %}
+
+
+
+class ErrorHandlingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        try:
+            return await call_next(request)
+        except Exception as exc:
+            request_id = getattr(request.state, "request_id", "unknown")
+
+            logger.error(f"Unhandled error: {str(exc)}", extra={"request_id": request_id})
+
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "error": True,
+                    "request_id": request_id
+                }
+            )

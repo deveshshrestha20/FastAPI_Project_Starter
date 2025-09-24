@@ -122,6 +122,16 @@ class TemplateRenderer:
                 "base/security.py.jinja": "app/core/security.py",
             })
 
+        if context.get("include_middlewares"):
+            mappings.update({
+                "middlewares/middleware_config.py.jinja": "app/middleware/config.py",
+                "middlewares/__init__.py.jinja": "app/middleware/__init__.py",
+                "middlewares/error_handling.py.jinja": "app/middleware/error_handling.py",
+                "middlewares/request_id.py.jinja": "app/middleware/request_id.py",
+                "middlewares/setup.py.jinja": "app/middleware/setup.py",
+                "middlewares/timer.py.jinja": "app/middleware/timer.py",
+            })
+
         if context.get("include_docker"):
             mappings.update({
                 "docker/docker-compose.yml.jinja": "docker-compose.yml",
