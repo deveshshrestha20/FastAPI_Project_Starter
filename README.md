@@ -6,10 +6,10 @@ A powerful CLI tool for generating production-ready FastAPI projects with modern
 [![Python Support](https://img.shields.io/pypi/pyversions/fastapi-project-starter.svg)](https://pypi.org/project/fastapi-project-starter/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## ✨ Features
+## Features
 
 - **Database Support** - PostgreSQL + SQLAlchemy + Alembic migrations with async or sync support
-- **Authentication** - JWT tokens + bcrypt + user management endpoints
+- **Middlewares Support** - TimerMiddleware + RequestID Middleware + CORS + ErrorHandlingMiddleware (v 1.2.0+)
 - **Background Tasks** - Celery + Redis + task monitoring with Flower
 - **Advanced Logging** - Loguru + structured logging + log rotation
 - **Docker Ready** - Complete containerization with docker-compose setup
@@ -23,14 +23,17 @@ A powerful CLI tool for generating production-ready FastAPI projects with modern
 
 ## Quick Start
 
-### Interactive Mode (Recommended)
+### Interactive Mode 
 ```bash
   fastapi_generator new create my_test_app -i
 
 ```
 
 
-
+## Images
+![img.png](img.png)
+![img_1.png](img_1.png)
+![img_2.png](img_2.png)
 
 ## Usage
 
@@ -50,7 +53,7 @@ A powerful CLI tool for generating production-ready FastAPI projects with modern
 
 ## After Generation
 
-**Navigate and setup**:
+**For Navigation and manual setup without using the post deployment setup**:
    ```bash
       cd project_name
       make install
